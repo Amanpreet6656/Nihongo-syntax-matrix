@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Privacy Policy | Nihongo Syntax Matrix</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23191B1F'/%3E%3Ctext x='16' y='23' font-family='Noto Sans JP, sans-serif' font-size='18' font-weight='700' fill='%23F9F9F6' text-anchor='middle'%3E構%3C/text%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="app-header">
+    <div class="header-inner">
+      <div class="brand">
+        <span class="brand-glyph">構</span>
+        <div class="brand-text">
+          <h1 class="brand-title">Nihongo Syntax Matrix</h1>
+          <span class="brand-subtitle">Algorithmic Japanese Morphology &amp; Syntax Engine</span>
+        </div>
+      </div>
+      <nav class="nav-controls">
+        <a href="index.html" class="lang-toggle" style="text-decoration:none; display:inline-block;">Return to Matrix</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="app-main">
+    <div class="policy-container">
+      <div class="policy-card">
+        <h1>Privacy Policy</h1>
+        <span class="policy-date">Effective Date: October 17, 2026</span>
+
+        <h2>1. Commitment to Offline-First Data Sovereignty</h2>
+        <p>The Nihongo Syntax Matrix operates on an offline-first architectural model. All morphological analysis, verb conjugation generation, kana matrix mapping, and date grammar calculations execute locally within the client browser runtime using pure ECMAScript.</p>
+
+        <h2>2. Data Collection and Transmission</h2>
+        <p>This application does not collect, transmit, sell, or analyze personal user data. Specifically:</p>
+        <ul>
+          <li>No external network requests or remote API calls are executed during operation.</li>
+          <li>No analytics scripts, tracking pixels, or third-party advertising libraries are loaded.</li>
+          <li>User input strings (verbs, calendar dates) remain in volatile client memory and are never transmitted to any external server.</li>
+        </ul>
+
+        <h2>3. Local Storage Utilization</h2>
+        <p>The application utilizes the browser's native <code>localStorage</code> API strictly to preserve user display preferences across sessions:</p>
+        <ul>
+          <li><code>nsm_theme</code>: Stores color scheme state (light or dark mode).</li>
+          <li><code>nsm_lang</code>: Stores user interface language preference (English or Japanese).</li>
+        </ul>
+        <p>These values can be cleared at any time through standard browser configuration.</p>
+
+        <h2>4. Contact &amp; Academic Inquiries</h2>
+        <p>For questions regarding pedagogical methodology or computational linguistic models employed in this matrix, contact the project maintainer via the institutional repository.</p>
+
+        <a href="index.html" class="back-link">&larr; Return to Application Matrix</a>
+      </div>
+    </div>
+  </main>
+
+  <footer class="app-footer">
+    <div class="footer-inner">
+      <div class="footer-left">
+        <span class="footer-title">Nihongo Syntax Matrix (日本語統語行列)</span>
+        <span class="footer-sub">Offline-First Computational Linguistics &amp; Pedagogical Tool</span>
+      </div>
+      <div class="footer-links">
+        <a href="index.html" class="footer-link">Matrix Home</a>
+        <a href="privacy.html" class="footer-link">Privacy Policy</a>
+        <a href="terms.html" class="footer-link">Terms &amp; Conditions</a>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    try {
+      const savedTheme = localStorage.getItem('nsm_theme');
+      if (savedTheme) {
+        document.documentElement.setAttribute('data-theme', savedTheme);
+      }
+    } catch(e) {}
+  </script>
+</body>
+</html>
