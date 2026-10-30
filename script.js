@@ -1,4 +1,3 @@
-// load dictionary objects for kana character sets
 const hiraganaChart = {
   vowels: ['a', 'i', 'u', 'e', 'o'],
   rows: [
@@ -33,7 +32,6 @@ const katakanaChart = {
   ]
 };
 
-// vowel row mappings for godan verb inflection
 const godanRowMap = {
   'う': { a: 'わ', i: 'い', u: 'う', e: 'え', o: 'お' },
   'く': { a: 'か', i: 'き', u: 'く', e: 'け', o: 'こ' },
@@ -46,7 +44,7 @@ const godanRowMap = {
   'る': { a: 'ら', i: 'り', u: 'る', e: 'れ', o: 'ろ' }
 };
 
-// verbs ending in -iru or -eru that belong to group 1 godan
+// godan verbs that end in -iru/-eru... hardcoding this list for now bc japanese is weird
 const godanExceptions = new Set([
   '帰る', '切る', '入る', '走る', '知る', '要る', '減る', '蹴る',
   '喋る', '限る', '握る', '滑る', '焦る', '照る', '散る', '遮る',
@@ -82,10 +80,46 @@ const kanaToRomajiMap = {
   'ぎゃ': 'gya', 'ぎゅ': 'gyu', 'ぎょ': 'gyo',
   'じゃ': 'ja', 'じゅ': 'ju', 'じょ': 'jo',
   'びゃ': 'bya', 'びゅ': 'byu', 'びょ': 'byo',
-  'ぴゃ': 'pya', 'ぴゅ': 'pyu', 'ぴょ': 'pyo'
+  'ぴゃ': 'pya', 'ぴゅ': 'pyu', 'ぴょ': 'pyo',
+  'ゔ': 'vu',
+  'ぢゃ': 'ja', 'ぢゅ': 'ju', 'ぢょ': 'jo',
+  'ぁ': 'a', 'ぃ': 'i', 'ぅ': 'u', 'ぇ': 'e', 'ぉ': 'o',
+  'ゐ': 'wi', 'ゑ': 'we'
 };
 
-// dictionary for bilingual ui text
+const canonicalReadings = {
+  '書く': 'かく',
+  '飲む': 'のむ',
+  '話す': 'はなす',
+  '待つ': 'まつ',
+  '買う': 'かう',
+  '泳ぐ': 'およぐ',
+  '行く': 'いく',
+  '帰る': 'かえる',
+  '食べる': 'たべる',
+  '見る': 'みる',
+  'する': 'する',
+  '勉強する': 'べんきょうする',
+  '来る': 'くる',
+  'くる': 'くる',
+  '有る': 'ある',
+  '居る': 'いる',
+  '寝る': 'ねる',
+  '着る': 'きる',
+  '起きる': 'おきる',
+  '教える': 'おしえる',
+  '歩く': 'あるく',
+  '走る': 'はしる',
+  '死ぬ': 'しぬ',
+  '呼ぶ': 'よぶ',
+  '遊ぶ': 'あそぶ',
+  '立つ': 'たつ',
+  '座る': 'すわる',
+  '働く': 'はたらく',
+  '読む': 'よむ',
+  '聞く': 'きく'
+};
+
 const uiText = {
   en: {
     app_title: 'Nihongo Syntax Matrix',
@@ -128,16 +162,16 @@ const uiText = {
     heading_particle_rules: 'Syntactic Constraints & Particle Mechanics',
     rule_badge_ni: 'Temporal Marker に (ni)',
     rule_ni_title: 'Absolute vs Relative Time Rule',
-    rule_ni_body: 'The case particle に (ni) marks an absolute, mathematically defined temporal point on the calendar. Conversely, relative temporal nouns (今日, 明日, 来週, 去年) strictly reject に.',
+    rule_ni_body: 'The case particle <strong>に (ni)</strong> marks an absolute, mathematically defined temporal point on the calendar. Conversely, relative temporal nouns (今日, 明日, 来週, 去年) strictly reject に.',
     sub_ni_valid: 'Grammatically required: Fixed calendar coordinate',
     sub_ni_invalid: 'Syntax violation: Relative deictic noun blocks particle に',
     rule_badge_range: 'Span Markers から / まで',
     rule_range_title: 'Temporal Boundaries (Source & Goal)',
-    rule_range_body: 'The postpositional particles から (kara) and まで (made) define the initial boundary (ablatival) and terminating boundary (terminative) of an interval.',
+    rule_range_body: 'The postpositional particles <strong>から (kara)</strong> and <strong>まで (made)</strong> define the initial boundary (ablatival) and terminating boundary (terminative) of an interval.',
     sub_range_desc: 'Bounded interval: From start date until end date',
     rule_badge_counter: 'Calendar Date vs. Duration Counter',
     rule_counter_title: 'Point vs Interval Counter Morphology',
-    rule_counter_body: 'A calendar date identifies a precise location on the calendar, whereas duration expressions append the counter interval suffix 間 (kan).',
+    rule_counter_body: 'A calendar date identifies a precise location on the calendar, whereas duration expressions append the counter interval suffix <strong>間 (kan)</strong>.',
     sub_counter_point: 'Point on calendar: Archaic \'tsukitachi\' (moon rise)',
     sub_counter_duration: 'Temporal duration: Sino-Japanese reading + 間 suffix',
     synthesizer_title: 'Contextual Sentence Synthesizer',
@@ -151,12 +185,12 @@ const uiText = {
     kana_heading: 'Gojūon Phonology Matrix & Verb Dan Association',
     kana_desc: 'The classical Japanese phonetic grid (五十音図) mapping the five vowel grades (段: a, i, u, e, o) to Godan verbal stem transformations.',
     kana_explain_title: 'Structural Connection to Godan Inflection',
-    kana_explain_p1: 'In Japanese grammatical pedagogy, Godan (五段) literally translates to "five grades" or "five steps". A Group 1 verb shifts its base consonant across all five vowel rows of the syllabary:',
-    dan_a: 'あ段 (a-grade): Irrealis stem (未然形) used for negative -nai, passive -reru, and causative -seru. (Note: Endings in -u shift to -wa).',
-    dan_i: 'い段 (i-grade): Continuative stem (連用形) used for polite -masu, compound verbs, and noun conversion.',
-    dan_u: 'う段 (u-grade): Terminal / Attributive form (終止形 / 連体形), the standard citation or dictionary form.',
-    dan_e: 'え段 (e-grade): Imperative (命令形) and Hypothetical stem (仮定形) for conditional -ba and potential verbs.',
-    dan_o: 'お段 (o-grade): Volitional stem (意向形) combined with -u (e.g., 書く → 書こう / kakō).',
+    kana_explain_p1: 'In Japanese grammatical pedagogy, <strong>Godan (五段)</strong> literally translates to <em>"five grades"</em> or <em>"five steps"</em>. A Group 1 verb shifts its base consonant across all five vowel rows of the syllabary:',
+    dan_a: '<strong>あ段 (a-grade):</strong> Irrealis stem (未然形) used for negative <em>-nai</em>, passive <em>-reru</em>, and causative <em>-seru</em>. (Note: Endings in <em>-u</em> shift to <em>-wa</em>).',
+    dan_i: '<strong>い段 (i-grade):</strong> Continuative stem (連用形) used for polite <em>-masu</em>, compound verbs, and noun conversion.',
+    dan_u: '<strong>う段 (u-grade):</strong> Terminal / Attributive form (終止形 / 連体形), the standard citation or dictionary form.',
+    dan_e: '<strong>え段 (e-grade):</strong> Imperative (命令形) and Hypothetical stem (仮定形) for conditional <em>-ba</em> and potential verbs.',
+    dan_o: '<strong>お段 (o-grade):</strong> Volitional stem (意向形) combined with <em>-u</em> (e.g., 書く → 書こう / kakō).',
     kana_legend: '5 Vowel Grades (段) × 10 Consonant Rows (行)',
     footer_sub: 'Offline-First Computational Linguistics & Pedagogical Tool',
     link_home: 'Matrix Home',
@@ -209,16 +243,16 @@ const uiText = {
     heading_particle_rules: '統語制約と助詞の選択規則',
     rule_badge_ni: '時を表す格助詞「に」',
     rule_ni_title: '絶対時間と相対時間の生起規則',
-    rule_ni_body: '格助詞「に」はカレンダー上の固定された絶対的数値時間を表示します。一方、発話時を基準とする相対時間名詞（今日、明日、来週、去年など）には「に」を接続できません。',
+    rule_ni_body: '格助詞<strong>「に」</strong>はカレンダー上の固定された絶対的数値時間を表示します。一方、発話時を基準とする相対時間名詞（今日、明日、来週、去年など）には「に」を接続できません。',
     sub_ni_valid: '文法的に必須: 確定暦日座標',
     sub_ni_invalid: '統語違反: 相対時間詞は助詞「に」の接続を阻害',
     rule_badge_range: '範囲の助詞「から」「まで」',
     rule_range_title: '時間境界（起点と着点）',
-    rule_range_body: '格助詞・副助詞「から」（起点）および「まで」（限界点）により、時間の区間境界を確定します。',
+    rule_range_body: '格助詞・副助詞<strong>「から」</strong>（起点）および<strong>「まで」</strong>（限界点）により、時間の区間境界を確定します。',
     sub_range_desc: '限定区間: 開始日から終了日まで',
     rule_badge_counter: '暦日と期間助数詞の区別',
     rule_counter_title: '時点と期間の形態素対立',
-    rule_counter_body: 'カレンダー上の特定日（時点）と、持続期間を表す「間（かん）」の付加による語彙対立を厳密に区別します。',
+    rule_counter_body: 'カレンダー上の特定日（時点）と、持続期間を表す<strong>「間（かん）」</strong>の付加による語彙対立を厳密に区別します。',
     sub_counter_point: '暦日上の特定日: 古語「月立ち（つきたち）」に由来',
     sub_counter_duration: '継続期間の表示: 漢数詞読み＋接尾辞「間（かん）」',
     synthesizer_title: '文脈例文シンセサイザー',
@@ -253,18 +287,30 @@ const uiText = {
 
 let currentLang = 'en';
 
-// convert hiragana string to romanized string
-function kanaToRomaji(kana) {
-  // normalize katakana characters to hiragana using unicode offset
-  const normalizedKana = Array.from(kana).map(c => {
-    const code = c.charCodeAt(0);
-    return (code >= 0x30A1 && code <= 0x30F6) ? String.fromCharCode(code - 0x60) : c;
-  }).join('');
+function escapeHTML(str) {
+  if (typeof str !== 'string') return String(str ?? '');
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
 
+function kanaToRomaji(kana) {
+  if (!kana) return '';
+  // normalize full/half-width characters and compatibility forms
+  const normalized = kana.normalize('NFKC');
+  // convert standard katakana (U+30A1-U+30F6) to hiragana
+  const hiraganaText = normalized.replace(/[\u30A1-\u30F6]/g, ch =>
+    String.fromCharCode(ch.charCodeAt(0) - 0x60)
+  );
+
+  const chars = Array.from(hiraganaText);
   let result = '';
   let i = 0;
-  while (i < normalizedKana.length) {
-    if (normalizedKana[i] === 'ー') {
+  while (i < chars.length) {
+    if (chars[i] === 'ー') {
       const prevChar = result.slice(-1);
       const vowelMap = { 'a': 'ā', 'i': 'ī', 'u': 'ū', 'e': 'ē', 'o': 'ō' };
       if (vowelMap[prevChar]) {
@@ -963,19 +1009,21 @@ function renderKanaGrid(script = 'hiragana') {
       } else {
         cell.className = 'kana-cell';
         cell.innerHTML = `
-          <span class="kana-char">${ch}</span>
-          <span class="kana-romaji">${r.romaji[idx]}</span>
+          <span class="kana-char">${escapeHTML(ch)}</span>
+          <span class="kana-romaji">${escapeHTML(r.romaji[idx])}</span>
         `;
       }
-      container.appendChild(cell);
+      fragment.appendChild(cell);
     });
   });
+
+  container.appendChild(fragment);
 }
 
-// copy matrix text to clipboard
 function copyMatrixToClipboard() {
   const table = document.getElementById('matrix-table');
-  if (!table) return;
+  const copyBtn = document.getElementById('copy-matrix-btn');
+  if (!table || !copyBtn) return;
 
   let text = '';
   const rows = table.querySelectorAll('tr');
@@ -1030,14 +1078,12 @@ function setLanguage(lang) {
     langBtn.textContent = bundle.lang_btn;
   }
 
-  // update dark mode button label
   const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
   const themeBtn = document.getElementById('theme-toggle');
   if (themeBtn) {
     themeBtn.textContent = isDark ? bundle.theme_light : bundle.theme_dark;
   }
 
-  // refresh active matrix and date displays
   runConjugation();
   runDateUpdate();
   const activeKanaScript = document.querySelector('.kana-mode-btn.active')?.dataset.script || 'hiragana';
@@ -1046,11 +1092,10 @@ function setLanguage(lang) {
   try {
     localStorage.setItem('nsm_lang', lang);
   } catch (e) {
-    // localStorage may be disabled
+    // storage unavailable or restricted
   }
 }
 
-// toggle dark theme
 function toggleTheme() {
   const current = document.documentElement.getAttribute('data-theme') || 'light';
   const next = (current === 'light') ? 'dark' : 'light';
@@ -1065,11 +1110,35 @@ function toggleTheme() {
   try {
     localStorage.setItem('nsm_theme', next);
   } catch (e) {
-    // localStorage may be disabled
   }
 }
 
-// populate month and day selectors
+// dynamically clamp maximum days based on year, month, and leap year status
+function updateDayOptions(year, month, selectedDay) {
+  const daySelect = document.getElementById('day-select');
+  if (!daySelect) return 1;
+
+  const maxDays = new Date(year, month, 0).getDate();
+  const currentVal = selectedDay !== undefined ? selectedDay : parseInt(daySelect.value, 10);
+  const targetDay = Math.min(Math.max(currentVal || 1, 1), maxDays);
+
+  daySelect.innerHTML = '';
+  const fragment = document.createDocumentFragment();
+  for (let i = 1; i <= maxDays; i++) {
+    const d = japaneseDays[i - 1];
+    const opt = document.createElement('option');
+    opt.value = i;
+    opt.textContent = d ? `${d.kanji} (${d.kana})` : `${i}日`;
+    if (i === targetDay) {
+      opt.selected = true;
+    }
+    fragment.appendChild(opt);
+  }
+  daySelect.appendChild(fragment);
+  daySelect.value = targetDay;
+  return targetDay;
+}
+
 function initDatePickers() {
   const monthSelect = document.getElementById('month-select');
   const daySelect = document.getElementById('day-select');
@@ -1140,9 +1209,7 @@ function runConjugation() {
   renderConjugationMatrix(data, filter);
 }
 
-// set up event listeners
 document.addEventListener('DOMContentLoaded', () => {
-  // restore stored settings
   try {
     const savedTheme = localStorage.getItem('nsm_theme');
     if (savedTheme) {
@@ -1153,13 +1220,11 @@ document.addEventListener('DOMContentLoaded', () => {
       currentLang = savedLang;
     }
   } catch (e) {
-    // ignore
   }
 
   initDatePickers();
   setLanguage(currentLang);
 
-  // navigation tabs
   document.querySelectorAll('.tab-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       document.querySelectorAll('.tab-btn').forEach(b => {
@@ -1176,7 +1241,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // theme and lang buttons
   const themeToggle = document.getElementById('theme-toggle');
   if (themeToggle) {
     themeToggle.addEventListener('click', toggleTheme);
@@ -1190,7 +1254,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // verb conjugation events
   const conjugateBtn = document.getElementById('conjugate-btn');
   if (conjugateBtn) {
     conjugateBtn.addEventListener('click', runConjugation);
@@ -1199,6 +1262,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const verbInput = document.getElementById('verb-input');
   if (verbInput) {
     verbInput.addEventListener('keydown', e => {
+      // guard against Japanese IME composition interrupt
+      if (e.isComposing || e.keyCode === 229) return;
       if (e.key === 'Enter') {
         e.preventDefault();
         runConjugation();
@@ -1216,7 +1281,6 @@ document.addEventListener('DOMContentLoaded', () => {
     filterSelect.addEventListener('change', runConjugation);
   }
 
-  // preset buttons
   document.querySelectorAll('.preset-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       const verb = btn.dataset.verb;
@@ -1227,13 +1291,11 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // copy matrix
   const copyBtn = document.getElementById('copy-matrix-btn');
   if (copyBtn) {
     copyBtn.addEventListener('click', copyMatrixToClipboard);
   }
 
-  // date controls synchronization
   const datePicker = document.getElementById('date-picker-input');
   const yearInput = document.getElementById('year-select');
   const monthSelect = document.getElementById('month-select');
@@ -1245,9 +1307,12 @@ document.addEventListener('DOMContentLoaded', () => {
       if (val) {
         const parts = val.split('-');
         if (parts.length === 3) {
-          if (yearInput) yearInput.value = parseInt(parts[0], 10);
-          if (monthSelect) monthSelect.value = parseInt(parts[1], 10);
-          if (daySelect) daySelect.value = parseInt(parts[2], 10);
+          const y = parseInt(parts[0], 10);
+          const m = parseInt(parts[1], 10);
+          const d = parseInt(parts[2], 10);
+          if (yearInput) yearInput.value = y;
+          if (monthSelect) monthSelect.value = m;
+          updateDayOptions(y, m, d);
           runDateUpdate();
         }
       }

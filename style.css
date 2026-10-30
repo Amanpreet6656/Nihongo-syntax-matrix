@@ -59,7 +59,6 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Header & Top Navigation */
 .app-header {
   border-bottom: 2px solid var(--border-strong);
   background-color: var(--surface);
@@ -181,7 +180,6 @@ body {
   border-bottom: 2px solid var(--border-strong);
 }
 
-/* Main Container */
 .app-main {
   flex: 1;
   max-width: 1360px;
@@ -217,7 +215,6 @@ body {
   max-width: 900px;
 }
 
-/* Form Controls & Inputs */
 .control-box {
   background-color: var(--surface);
   border: 1px solid var(--border);
@@ -300,7 +297,6 @@ body {
   background-color: var(--accent-hover);
 }
 
-/* Preset Buttons */
 .preset-row {
   margin-top: 18px;
   padding-top: 14px;
@@ -342,7 +338,6 @@ body {
   border-color: var(--border-strong);
 }
 
-/* Morphological Summary Card */
 .summary-card {
   background-color: var(--surface);
   border: 1px solid var(--border);
@@ -390,7 +385,6 @@ body {
   width: fit-content;
 }
 
-/* Matrix Table */
 .matrix-wrapper {
   background-color: var(--surface);
   border: 1px solid var(--border);
@@ -546,7 +540,6 @@ body {
   max-width: 320px;
 }
 
-/* Date Grammar View */
 .date-controls-grid {
   display: grid;
   grid-template-columns: 2fr 1fr 1.2fr 1.2fr 1fr;
@@ -654,7 +647,6 @@ body {
   font-weight: 700;
 }
 
-/* Syntactic Rules Box */
 .rules-container {
   margin-top: 8px;
 }
@@ -755,7 +747,6 @@ body {
   margin-top: 3px;
 }
 
-/* Synthesizer Card */
 .synthesizer-card {
   background-color: var(--surface);
   border: 1px solid var(--border);
@@ -815,7 +806,6 @@ body {
   font-style: italic;
 }
 
-/* Kana Phonology Section */
 .kana-layout-grid {
   display: grid;
   grid-template-columns: 360px 1fr;
@@ -957,7 +947,6 @@ body {
   display: block;
 }
 
-/* Footer */
 .app-footer {
   border-top: 1px solid var(--border);
   background-color: var(--surface);
@@ -1011,7 +1000,6 @@ body {
   text-decoration: underline;
 }
 
-/* Utility / Policy Pages */
 .policy-container {
   max-width: 860px;
   margin: 0 auto;
@@ -1082,7 +1070,7 @@ body {
   background-color: var(--accent-hover);
 }
 
-/* Responsive Breakpoints */
+/* media queries so mobile doesn't look completely broken */
 @media (max-width: 1024px) {
   .verb-form {
     grid-template-columns: 1fr 1fr;

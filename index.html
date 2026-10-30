@@ -36,7 +36,6 @@
   </header>
 
   <main class="app-main">
-    <!-- Verb Conjugation Matrix Section -->
     <section id="section-verb" class="view-panel active" role="tabpanel">
       <div class="panel-header">
         <div class="panel-heading">
@@ -98,12 +97,9 @@
         </div>
       </div>
 
-      <!-- Morphological Metadata Summary Card -->
       <div id="verb-summary" class="summary-card">
-        <!-- Rendered dynamically via JS -->
       </div>
 
-      <!-- Conjugation Matrix Output Grid -->
       <div class="matrix-wrapper">
         <div class="matrix-toolbar">
           <span class="matrix-status" id="matrix-count">16 Paradigmatic Inflections Generated</span>
@@ -123,14 +119,12 @@
               </tr>
             </thead>
             <tbody id="matrix-body">
-              <!-- Dynamically populated rows -->
             </tbody>
           </table>
         </div>
       </div>
     </section>
 
-    <!-- Date Grammar Constructor Section -->
     <section id="section-date" class="view-panel" role="tabpanel">
       <div class="panel-header">
         <div class="panel-heading">
@@ -164,7 +158,6 @@
         </div>
       </div>
 
-      <!-- Date Syntax Overview Cards -->
       <div class="date-display-grid">
         <div class="date-card primary-card">
           <span class="card-caption" data-i18n="caption_standard_date">Standard Written Format (年月日)</span>
@@ -177,19 +170,17 @@
         <div class="date-card breakdown-card">
           <span class="card-caption" data-i18n="caption_phonology_breakdown">Component Phonological Breakdown</span>
           <div class="breakdown-grid" id="date-breakdown-grid">
-            <!-- Dynamically populated components -->
           </div>
         </div>
       </div>
 
-      <!-- Syntactic Rules & Particle Mechanics -->
       <div class="rules-container">
         <h3 class="rules-heading" data-i18n="heading_particle_rules">Syntactic Constraints &amp; Particle Mechanics</h3>
         <div class="rules-grid">
           <div class="rule-box">
             <div class="rule-badge" data-i18n="rule_badge_ni">Temporal Marker に (ni)</div>
             <h4 data-i18n="rule_ni_title">Absolute vs Relative Time Rule</h4>
-            <p data-i18n="rule_ni_body">The case particle <strong>に (ni)</strong> marks an absolute, mathematically defined temporal point on the calendar. Conversely, relative temporal nouns (今日, 明日, 来週, 去年) strictly reject に.</p>
+            <p data-i18n="rule_ni_body" data-i18n-html>The case particle <strong>に (ni)</strong> marks an absolute, mathematically defined temporal point on the calendar. Conversely, relative temporal nouns (今日, 明日, 来週, 去年) strictly reject に.</p>
             <div class="rule-examples">
               <div class="example-item correct">
                 <span class="status-marker">✓</span>
@@ -207,7 +198,7 @@
           <div class="rule-box">
             <div class="rule-badge" data-i18n="rule_badge_range">Span Markers から / まで</div>
             <h4 data-i18n="rule_range_title">Temporal Boundaries (Source &amp; Goal)</h4>
-            <p data-i18n="rule_range_body">The postpositional particles <strong>から (kara)</strong> and <strong>まで (made)</strong> define the initial boundary (ablatival) and terminating boundary (terminative) of an interval.</p>
+            <p data-i18n="rule_range_body" data-i18n-html>The postpositional particles <strong>から (kara)</strong> and <strong>まで (made)</strong> define the initial boundary (ablatival) and terminating boundary (terminative) of an interval.</p>
             <div class="rule-examples">
               <div class="example-item correct">
                 <span class="status-marker">✓</span>
@@ -220,7 +211,7 @@
           <div class="rule-box">
             <div class="rule-badge" data-i18n="rule_badge_counter">Calendar Date vs. Duration Counter</div>
             <h4 data-i18n="rule_counter_title">Point vs Interval Counter Morphology</h4>
-            <p data-i18n="rule_counter_body">A calendar date identifies a precise location on the calendar, whereas duration expressions append the counter interval suffix <strong>間 (kan)</strong>.</p>
+            <p data-i18n="rule_counter_body" data-i18n-html>A calendar date identifies a precise location on the calendar, whereas duration expressions append the counter interval suffix <strong>間 (kan)</strong>.</p>
             <div class="rule-examples">
               <div class="example-item neutral">
                 <span class="status-marker">・</span>
@@ -236,7 +227,6 @@
           </div>
         </div>
 
-        <!-- Interactive Sentence Synthesizer -->
         <div class="synthesizer-card">
           <div class="synthesizer-header">
             <h4 data-i18n="synthesizer_title">Contextual Sentence Synthesizer</h4>
@@ -261,7 +251,6 @@
       </div>
     </section>
 
-    <!-- Kana Phonology Matrix Section -->
     <section id="section-kana" class="view-panel" role="tabpanel">
       <div class="panel-header">
         <div class="panel-heading">
@@ -273,13 +262,13 @@
       <div class="kana-layout-grid">
         <div class="kana-explanation-card">
           <h3 data-i18n="kana_explain_title">Structural Connection to Godan Inflection</h3>
-          <p data-i18n="kana_explain_p1">In Japanese grammatical pedagogy, <strong>Godan (五段)</strong> literally translates to <em>"five grades"</em> or <em>"five steps"</em>. A Group 1 verb shifts its base consonant across all five vowel rows of the syllabary:</p>
+          <p data-i18n="kana_explain_p1" data-i18n-html>In Japanese grammatical pedagogy, <strong>Godan (五段)</strong> literally translates to <em>"five grades"</em> or <em>"five steps"</em>. A Group 1 verb shifts its base consonant across all five vowel rows of the syllabary:</p>
           <ul class="dan-list">
-            <li data-i18n="dan_a"><strong>あ段 (a-grade):</strong> Irrealis stem (未然形) used for negative <em>-nai</em>, passive <em>-reru</em>, and causative <em>-seru</em>. (Note: Endings in <em>-u</em> shift to <em>-wa</em>).</li>
-            <li data-i18n="dan_i"><strong>い段 (i-grade):</strong> Continuative stem (連用形) used for polite <em>-masu</em>, compound verbs, and noun conversion.</li>
-            <li data-i18n="dan_u"><strong>う段 (u-grade):</strong> Terminal / Attributive form (終止形 / 連体形), the standard citation or dictionary form.</li>
-            <li data-i18n="dan_e"><strong>え段 (e-grade):</strong> Imperative (命令形) and Hypothetical stem (仮定形) for conditional <em>-ba</em> and potential verbs.</li>
-            <li data-i18n="dan_o"><strong>お段 (o-grade):</strong> Volitional stem (意向形) combined with <em>-u</em> (e.g., 書く → 書こう / kakō).</li>
+            <li data-i18n="dan_a" data-i18n-html><strong>あ段 (a-grade):</strong> Irrealis stem (未然形) used for negative <em>-nai</em>, passive <em>-reru</em>, and causative <em>-seru</em>. (Note: Endings in <em>-u</em> shift to <em>-wa</em>).</li>
+            <li data-i18n="dan_i" data-i18n-html><strong>い段 (i-grade):</strong> Continuative stem (連用形) used for polite <em>-masu</em>, compound verbs, and noun conversion.</li>
+            <li data-i18n="dan_u" data-i18n-html><strong>う段 (u-grade):</strong> Terminal / Attributive form (終止形 / 連体形), the standard citation or dictionary form.</li>
+            <li data-i18n="dan_e" data-i18n-html><strong>え段 (e-grade):</strong> Imperative (命令形) and Hypothetical stem (仮定形) for conditional <em>-ba</em> and potential verbs.</li>
+            <li data-i18n="dan_o" data-i18n-html><strong>お段 (o-grade):</strong> Volitional stem (意向形) combined with <em>-u</em> (e.g., 書く → 書こう / kakō).</li>
           </ul>
         </div>
 
@@ -292,7 +281,6 @@
             <span class="kana-legend" data-i18n="kana_legend">5 Vowel Grades (段) × 10 Consonant Rows (行)</span>
           </div>
           <div class="kana-grid-container" id="kana-grid-container">
-            <!-- Dynamically populated 5x10 Gojuon matrix -->
           </div>
         </div>
       </div>
