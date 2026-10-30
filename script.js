@@ -56,7 +56,6 @@ const godanExceptions = new Set([
   '捻る', 'ひねる', '嘲る', 'あざける', '覆る', 'くつがえる'
 ]);
 
-// basic kana to romaji dictionary
 const kanaToRomajiMap = {
   'あ': 'a', 'い': 'i', 'う': 'u', 'え': 'e', 'お': 'o',
   'か': 'ka', 'き': 'ki', 'く': 'ku', 'け': 'ke', 'こ': 'ko',
@@ -275,10 +274,10 @@ function kanaToRomaji(kana) {
       continue;
     }
 
-    if (normalizedKana[i] === 'っ') {
-      const nextChar = normalizedKana[i + 1];
+    if (chars[i] === 'っ') {
+      const nextChar = chars[i + 1];
       if (nextChar) {
-        const nextTwo = normalizedKana.slice(i + 1, i + 3);
+        const nextTwo = (chars[i + 1] || '') + (chars[i + 2] || '');
         const rom = kanaToRomajiMap[nextTwo] || kanaToRomajiMap[nextChar] || '';
         if (rom.length > 0) {
           result += rom.startsWith('ch') ? 't' : rom[0];
@@ -288,19 +287,18 @@ function kanaToRomaji(kana) {
       continue;
     }
 
-    const twoChars = normalizedKana.slice(i, i + 2);
+    const twoChars = (chars[i] || '') + (chars[i + 1] || '');
     if (kanaToRomajiMap[twoChars]) {
       result += kanaToRomajiMap[twoChars];
       i += 2;
       continue;
     }
 
-    const oneChar = normalizedKana[i];
+    const oneChar = chars[i];
     if (kanaToRomajiMap[oneChar]) {
       let rom = kanaToRomajiMap[oneChar];
-      // Inject standard Hepburn apostrophe if 'ん' is followed by a vowel or 'y'
       if (oneChar === 'ん') {
-        const nextChar = normalizedKana[i + 1];
+        const nextChar = chars[i + 1];
         if (nextChar && /^[あいうえおやゆよ]/.test(nextChar)) {
           rom = "n'";
         }
@@ -312,14 +310,20 @@ function kanaToRomaji(kana) {
     i++;
   }
 
-  // format long vowels, preserving terminal ou in verbs
-  result = result.replace(/ou(?!\b)/g, 'ō').replace(/oo/g, 'ō').replace(/uu/g, 'ū').replace(/aa/g, 'ā').replace(/ee/g, 'ē').replace(/ii/g, 'ī');
+  // macron expansion across standard long vowels including volitional ou -> ō
+  result = result
+    .replace(/ou/g, 'ō')
+    .replace(/oo/g, 'ō')
+    .replace(/uu/g, 'ū')
+    .replace(/aa/g, 'ā')
+    .replace(/ee/g, 'ē')
+    .replace(/ii/g, 'ī');
   return result;
 }
 
-// detect verb class automatically
 function detectVerbGroup(verb) {
-  const clean = verb.trim();
+  const clean = (verb || '').normalize('NFKC').trim();
+  const chars = Array.from(clean);
   const nativeSuruGodan = new Set(['擦る', 'こする', '摩る', 'さする', '揺する', 'ゆする', '掠る', 'かする']);
   if ((clean === 'する' || clean.endsWith('する')) && !nativeSuruGodan.has(clean)) {
     return 'irregular-suru';
@@ -336,12 +340,10 @@ function detectVerbGroup(verb) {
     return 'godan';
   }
 
-  // check sound before ru ending
-  if (clean.length >= 2) {
-    const prevChar = clean[clean.length - 2];
+  if (chars.length >= 2) {
+    const prevChar = chars[chars.length - 2];
     const iOrESounds = ['い', 'き', 'ぎ', 'し', 'じ', 'ち', 'ぢ', 'に', 'ひ', 'び', 'ぴ', 'み', 'り',
                         'え', 'け', 'げ', 'せ', 'ぜ', 'て', 'で', 'ね', 'へ', 'べ', 'ぺ', 'め', 'れ'];
-    // add common 1-kanji ichidan roots
     const ichidanKanji = ['見', '寝', '着', '似', '煮', '得', '経', '居', '出', '診', '射', '鋳', '干'];
     if (iOrESounds.includes(prevChar) || ichidanKanji.includes(prevChar)) {
       return 'ichidan';
@@ -351,9 +353,8 @@ function detectVerbGroup(verb) {
   return 'godan';
 }
 
-// generate comprehensive conjugation matrix
 function conjugateVerb(inputVerb, manualGroup) {
-  const verb = inputVerb.trim();
+  const verb = (inputVerb || '').normalize('NFKC').trim();
   if (!verb) return { error: 'Empty input' };
 
   let group = manualGroup;
@@ -361,18 +362,21 @@ function conjugateVerb(inputVerb, manualGroup) {
     group = detectVerbGroup(verb);
   }
 
-  const results = [];
-  const lastChar = verb.slice(-1);
-  const baseStem = verb.slice(0, -1);
+  const chars = Array.from(verb);
+  const lastChar = chars[chars.length - 1];
+  const baseStem = chars.slice(0, -1).join('');
 
-  // handle irregular suru
+  const reading = canonicalReadings[verb] || verb;
+  const readingChars = Array.from(reading);
+  const readBaseStem = readingChars.slice(0, -1).join('');
+
   if (group === 'irregular-suru') {
     let prefix = '';
+    let prefixReading = '';
     if (verb.endsWith('する')) {
-      prefix = verb.slice(0, -2);
+      prefix = chars.slice(0, -2).join('');
+      prefixReading = readingChars.length >= 2 ? readingChars.slice(0, -2).join('') : prefix;
     }
-    const isKanji = prefix.length > 0;
-    const prefixReading = prefix;
 
     const forms = [
       { id: 'dict', nameEn: 'Dictionary / Non-Past', nameJa: '辞書形 / 終止形', reg: 'plain', conj: prefix + 'する', read: prefixReading + 'する', stem: prefix, suf: 'する', morph: 'sur-u [Citation]', synEn: 'Present and future plain affirmative', synJa: '現在の習慣、確実な未来' },
@@ -467,12 +471,12 @@ function conjugateVerb(inputVerb, manualGroup) {
   const isTou = (verb === '問う' || verb === 'とう' || verb === '請う' || verb === 'こう');
 
   if (isIku) {
-    // swap ending to -te form with sokuonbin exception
     teSuffix = 'って';
     taSuffix = 'った';
     taraSuffix = 'ったら';
     euphonyNote = '促音便 (Sokuonbin exception for iku)';
   } else if (isTou) {
+    // tou and kou do u-onbin (oute/koute) instead of otte/kotte, weird exception
     teSuffix = 'うて';
     taSuffix = 'うた';
     taraSuffix = 'うたら';
@@ -504,34 +508,36 @@ function conjugateVerb(inputVerb, manualGroup) {
     euphonyNote = 'サ行摩擦音保持 (Regular palatalization)';
   }
 
-  // negative form calculation
+  // aru negative is just nai not aranai lol
   const naiForm = isAru ? 'ない' : stem + row.a + 'ない';
+  const readNaiForm = isAru ? 'ない' : readStem + row.a + 'ない';
   const masenForm = isAru ? 'ありません' : stem + iSound + 'ません';
+  const readMasenForm = isAru ? 'ありません' : readStem + iSound + 'ません';
   const nakattaForm = isAru ? 'なかった' : stem + row.a + 'なかった';
+  const readNakattaForm = isAru ? 'なかった' : readStem + row.a + 'なかった';
 
   const forms = [
-    { id: 'dict', nameEn: 'Dictionary / Non-Past', nameJa: '辞書形 / 終止形', reg: 'plain', conj: verb, read: verb, stem, suf: lastChar, morph: `u-grade: [${lastChar}]`, synEn: 'Affirmative non-past habitual or future', synJa: '現在の習慣、将来の事象' },
-    { id: 'masu', nameEn: 'Polite Non-Past (-masu)', nameJa: 'ます形 / 丁寧形', reg: 'polite', conj: stem + iSound + 'ます', read: stem + iSound + 'ます', stem: stem + iSound, suf: 'ます', morph: isKeigo ? 'honorific stem shift [い] + masu' : `i-grade: [${row.i}] + masu`, synEn: 'Polite assertion in formal discourse', synJa: '丁寧な陳述・対話' },
-    { id: 'nai', nameEn: 'Plain Negative (-nai)', nameJa: '未然形・ない形', reg: 'plain', conj: naiForm, read: naiForm, stem: isAru ? '' : stem + row.a, suf: isAru ? 'ない' : 'ない', morph: isAru ? 'suppletive [nai]' : `a-grade: [${row.a}] + nai`, synEn: 'Informal negative assertion', synJa: '未然形による否定' },
-    { id: 'masen', nameEn: 'Polite Negative (-masen)', nameJa: 'ません形', reg: 'polite', conj: masenForm, read: masenForm, stem: stem + iSound, suf: 'ません', morph: isKeigo ? 'honorific stem shift [い] + masen' : `i-grade: [${row.i}] + masen`, synEn: 'Polite negation', synJa: '丁寧な否定' },
-    { id: 'te', nameEn: 'Conjunctive (-te form)', nameJa: 'て形 / 接続形', reg: 'plain', conj: stem + teSuffix, read: stem + teSuffix, stem, suf: teSuffix, morph: euphonyNote, synEn: 'Coordinate conjunction, requests, aspect', synJa: '連用形音便・文の接続' },
-    { id: 'ta', nameEn: 'Plain Past (-ta form)', nameJa: 'た形 / 過去形', reg: 'plain', conj: stem + taSuffix, read: stem + taSuffix, stem, suf: taSuffix, morph: euphonyNote.replace('te', 'ta'), synEn: 'Completed past or perfect state', synJa: '過去の完了・事象' },
-    { id: 'mashita', nameEn: 'Polite Past (-mashita)', nameJa: 'ました形', reg: 'polite', conj: stem + iSound + 'ました', read: stem + iSound + 'ました', stem: stem + iSound, suf: 'ました', morph: isKeigo ? 'honorific stem shift [い] + mashita' : `i-grade: [${row.i}] + mashita`, synEn: 'Formal completed past', synJa: '丁寧な過去の叙述' },
-    { id: 'masen_deshita', nameEn: 'Polite Past Neg (-masen deshita)', nameJa: 'ませんでした形', reg: 'polite', conj: stem + iSound + 'ませんでした', read: stem + iSound + 'ませんでした', stem: stem + iSound, suf: 'ませんでした', morph: isKeigo ? 'honorific stem shift [い] + masen deshita' : `i-grade: [${row.i}] + masen deshita`, synEn: 'Formal past negation', synJa: '丁寧な過去否定' },
-    { id: 'nakatta', nameEn: 'Plain Past Negative (-nakatta)', nameJa: 'なかった形', reg: 'plain', conj: nakattaForm, read: nakattaForm, stem: isAru ? '' : stem + row.a, suf: isAru ? 'なかった' : 'なかった', morph: isAru ? 'suppletive [nakatta]' : `a-grade: [${row.a}] + nakatta`, synEn: 'Plain past negative', synJa: '日常的な過去否定' },
-    { id: 'potential', nameEn: 'Potential Form', nameJa: '可能形', reg: 'plain', conj: stem + row.e + 'る', read: stem + row.e + 'る', stem: stem + row.e, suf: 'る', morph: `e-grade: [${row.e}] + ru`, synEn: 'Capacity or circumstantial possibility', synJa: '可能動詞化（下一段活用化）' },
-    { id: 'passive', nameEn: 'Passive Form (-reru)', nameJa: '受身形', reg: 'plain', conj: stem + row.a + 'れる', read: stem + row.a + 'れる', stem: stem + row.a, suf: 'れる', morph: `a-grade: [${row.a}] + reru`, synEn: 'Passive voice, potential, indirect adversity', synJa: '受動・自発・可能・尊敬' },
-    { id: 'causative', nameEn: 'Causative Form (-seru)', nameJa: '使役形', reg: 'plain', conj: stem + row.a + 'せる', read: stem + row.a + 'せる', stem: stem + row.a, suf: 'せる', morph: `a-grade: [${row.a}] + seru`, synEn: 'Induce or permit an agent to act', synJa: '他者への動機付け・強制' },
-    { id: 'imperative', nameEn: 'Imperative Form', nameJa: '命令形', reg: 'plain', conj: stem + impSuffix, read: stem + impSuffix, stem, suf: impSuffix, morph: isKeigo ? 'honorific imperative shift [い]' : `e-grade: [${row.e}]`, synEn: 'Strong directive command', synJa: '強い直接命令' },
-    { id: 'volitional', nameEn: 'Volitional Form (-ō)', nameJa: '意向形', reg: 'plain', conj: stem + row.o + 'う', read: stem + row.o + 'う', stem: stem + row.o, suf: 'う', morph: `o-grade: [${row.o}] + u`, synEn: 'Speaker resolution or mutual suggestion', synJa: '意志表明・連帯勧誘' },
-    { id: 'ba', nameEn: 'Provisional Conditional (-ba)', nameJa: '仮定形・ば形', reg: 'plain', conj: stem + row.e + 'ば', read: stem + row.e + 'ば', stem: stem + row.e, suf: 'ば', morph: `e-grade: [${row.e}] + ba`, synEn: 'General law or prerequisite condition', synJa: '順接仮定条件' },
-    { id: 'tara', nameEn: 'General Conditional (-tara)', nameJa: '条件形・たら形', reg: 'plain', conj: stem + taraSuffix, read: stem + taraSuffix, stem, suf: taraSuffix, morph: `ta-stem + ra`, synEn: 'Subsequent result upon completion', synJa: '継起条件・個別状況仮定' }
+    { id: 'dict', nameEn: 'Dictionary / Non-Past', nameJa: '辞書形 / 終止形', reg: 'plain', conj: verb, read: reading, stem, suf: lastChar, morph: `u-grade: [${lastChar}]`, synEn: 'Affirmative non-past habitual or future', synJa: '現在の習慣、将来の事象' },
+    { id: 'masu', nameEn: 'Polite Non-Past (-masu)', nameJa: 'ます形 / 丁寧形', reg: 'polite', conj: stem + iSound + 'ます', read: readStem + iSound + 'ます', stem: stem + iSound, suf: 'ます', morph: isKeigo ? 'honorific stem shift [い] + masu' : `i-grade: [${row.i}] + masu`, synEn: 'Polite assertion in formal discourse', synJa: '丁寧な陳述・対話' },
+    { id: 'nai', nameEn: 'Plain Negative (-nai)', nameJa: '未然形・ない形', reg: 'plain', conj: naiForm, read: readNaiForm, stem: isAru ? '' : stem + row.a, suf: isAru ? 'ない' : 'ない', morph: isAru ? 'suppletive [nai]' : `a-grade: [${row.a}] + nai`, synEn: 'Informal negative assertion', synJa: '未然形による否定' },
+    { id: 'masen', nameEn: 'Polite Negative (-masen)', nameJa: 'ません形', reg: 'polite', conj: masenForm, read: readMasenForm, stem: stem + iSound, suf: 'ません', morph: isKeigo ? 'honorific stem shift [い] + masen' : `i-grade: [${row.i}] + masen`, synEn: 'Polite negation', synJa: '丁寧な否定' },
+    { id: 'te', nameEn: 'Conjunctive (-te form)', nameJa: 'て形 / 接続形', reg: 'plain', conj: stem + teSuffix, read: readStem + teSuffix, stem, suf: teSuffix, morph: euphonyNote, synEn: 'Coordinate conjunction, requests, aspect', synJa: '連用形音便・文の接続' },
+    { id: 'ta', nameEn: 'Plain Past (-ta form)', nameJa: 'た形 / 過去形', reg: 'plain', conj: stem + taSuffix, read: readStem + taSuffix, stem, suf: taSuffix, morph: euphonyNote.replace('te', 'ta'), synEn: 'Completed past or perfect state', synJa: '過去の完了・事象' },
+    { id: 'mashita', nameEn: 'Polite Past (-mashita)', nameJa: 'ました形', reg: 'polite', conj: stem + iSound + 'ました', read: readStem + iSound + 'ました', stem: stem + iSound, suf: 'ました', morph: isKeigo ? 'honorific stem shift [い] + mashita' : `i-grade: [${row.i}] + mashita`, synEn: 'Formal completed past', synJa: '丁寧な過去の叙述' },
+    { id: 'masen_deshita', nameEn: 'Polite Past Neg (-masen deshita)', nameJa: 'ませんでした形', reg: 'polite', conj: stem + iSound + 'ませんでした', read: readStem + iSound + 'ませんでした', stem: stem + iSound, suf: 'ませんでした', morph: isKeigo ? 'honorific stem shift [い] + masen deshita' : `i-grade: [${row.i}] + masen deshita`, synEn: 'Formal past negation', synJa: '丁寧な過去否定' },
+    { id: 'nakatta', nameEn: 'Plain Past Negative (-nakatta)', nameJa: 'なかった形', reg: 'plain', conj: nakattaForm, read: readNakattaForm, stem: isAru ? '' : stem + row.a, suf: isAru ? 'なかった' : 'なかった', morph: isAru ? 'suppletive [nakatta]' : `a-grade: [${row.a}] + nakatta`, synEn: 'Plain past negative', synJa: '日常的な過去否定' },
+    { id: 'potential', nameEn: 'Potential Form', nameJa: '可能形', reg: 'plain', conj: stem + row.e + 'る', read: readStem + row.e + 'る', stem: stem + row.e, suf: 'る', morph: `e-grade: [${row.e}] + ru`, synEn: 'Capacity or circumstantial possibility', synJa: '可能動詞化（下一段活用化）' },
+    { id: 'passive', nameEn: 'Passive Form (-reru)', nameJa: '受身形', reg: 'plain', conj: stem + row.a + 'れる', read: readStem + row.a + 'れる', stem: stem + row.a, suf: 'れる', morph: `a-grade: [${row.a}] + reru`, synEn: 'Passive voice, potential, indirect adversity', synJa: '受動・自発・可能・尊敬' },
+    { id: 'causative', nameEn: 'Causative Form (-seru)', nameJa: '使役形', reg: 'plain', conj: stem + row.a + 'せる', read: readStem + row.a + 'せる', stem: stem + row.a, suf: 'せる', morph: `a-grade: [${row.a}] + seru`, synEn: 'Induce or permit an agent to act', synJa: '他者への動機付け・強制' },
+    { id: 'imperative', nameEn: 'Imperative Form', nameJa: '命令形', reg: 'plain', conj: stem + impSuffix, read: readStem + impSuffix, stem, suf: impSuffix, morph: isKeigo ? 'honorific imperative shift [い]' : `e-grade: [${row.e}]`, synEn: 'Strong directive command', synJa: '強い直接命令' },
+    { id: 'volitional', nameEn: 'Volitional Form (-ō)', nameJa: '意向形', reg: 'plain', conj: stem + row.o + 'う', read: readStem + row.o + 'う', stem: stem + row.o, suf: 'う', morph: `o-grade: [${row.o}] + u`, synEn: 'Speaker resolution or mutual suggestion', synJa: '意志表明・連帯勧誘' },
+    { id: 'ba', nameEn: 'Provisional Conditional (-ba)', nameJa: '仮定形・ば形', reg: 'plain', conj: stem + row.e + 'ば', read: readStem + row.e + 'ば', stem: stem + row.e, suf: 'ば', morph: `e-grade: [${row.e}] + ba`, synEn: 'General law or prerequisite condition', synJa: '順接仮定条件' },
+    { id: 'tara', nameEn: 'General Conditional (-tara)', nameJa: '条件形・たら形', reg: 'plain', conj: stem + taraSuffix, read: readStem + taraSuffix, stem, suf: taraSuffix, morph: `ta-stem + ra`, synEn: 'Subsequent result upon completion', synJa: '継起条件・個別状況仮定' }
   ];
 
   return { verb, group, groupLabel: 'Group 1: Godan (五段動詞)', stem, ending: lastChar, forms };
 }
 
-// date grammar rules and calendar phonology module
 const japaneseMonths = [
   { num: 1, kanji: '1月', kana: 'いちがつ', romaji: 'ichigatsu', irregular: false, note: 'Regular Sino-Japanese' },
   { num: 2, kanji: '2月', kana: 'にがつ', romaji: 'nigatsu', irregular: false, note: 'Regular Sino-Japanese' },
@@ -591,37 +597,51 @@ const weekdays = [
   { index: 6, kanji: '土曜日', short: '土', kana: 'どようび', romaji: 'doyōbi', elemEn: 'Earth/Soil (Saturn)', elemJa: '土星・土' }
 ];
 
-// compute japanese era name from date
 function getImperialEra(year, month, day) {
   const d = new Date(year, month - 1, day);
-  if (d >= new Date(2019, 4, 1)) {
+  // enforce explicit full year to avoid 2-digit rollover (0-99 -> 1900-1999)
+  d.setFullYear(year);
+
+  const reiwaStart = new Date(2019, 4, 1);
+  reiwaStart.setFullYear(2019);
+  const heiseiStart = new Date(1989, 0, 8);
+  heiseiStart.setFullYear(1989);
+  const showaStart = new Date(1926, 11, 25);
+  showaStart.setFullYear(1926);
+  const taishoStart = new Date(1912, 6, 30);
+  taishoStart.setFullYear(1912);
+  const meijiStart = new Date(1868, 0, 1);
+  meijiStart.setFullYear(1868);
+
+  if (d >= reiwaStart) {
     const eraYear = year - 2018;
     const yearStr = eraYear === 1 ? '元年' : `${eraYear}年`;
     return { name: '令和', romaji: 'Reiwa', yearStr, eraNum: eraYear };
-  } else if (d >= new Date(1989, 0, 8)) {
+  } else if (d >= heiseiStart) {
     const eraYear = year - 1988;
     const yearStr = eraYear === 1 ? '元年' : `${eraYear}年`;
     return { name: '平成', romaji: 'Heisei', yearStr, eraNum: eraYear };
-  } else if (d >= new Date(1926, 11, 25)) {
+  } else if (d >= showaStart) {
     const eraYear = year - 1925;
     const yearStr = eraYear === 1 ? '元年' : `${eraYear}年`;
     return { name: '昭和', romaji: 'Shōwa', yearStr, eraNum: eraYear };
-  } else if (d >= new Date(1912, 6, 30)) {
+  } else if (d >= taishoStart) {
     const eraYear = year - 1911;
     const yearStr = eraYear === 1 ? '元年' : `${eraYear}年`;
     return { name: '大正', romaji: 'Taishō', yearStr, eraNum: eraYear };
-  } else {
+  } else if (d >= meijiStart) {
     const eraYear = year - 1867;
     const yearStr = eraYear === 1 ? '元年' : `${eraYear}年`;
     return { name: '明治', romaji: 'Meiji', yearStr, eraNum: eraYear };
+  } else {
+    return { name: '西暦', romaji: 'Seireki', yearStr: `${year}年`, eraNum: year };
   }
 }
 
-// convert year number to kana reading
 function getYearKana(year) {
   const digits = ['ぜろ', 'いち', 'に', 'さん', 'よん', 'ご', 'ろく', 'なな', 'はち', 'きゅう'];
   const y = parseInt(year, 10);
-  if (isNaN(y)) return '';
+  if (isNaN(y) || y < 1 || y > 9999) return '';
 
   let kana = '';
   const thousands = Math.floor(y / 1000);
@@ -632,6 +652,7 @@ function getYearKana(year) {
   if (thousands === 1) kana += 'せん';
   else if (thousands === 2) kana += 'にせん';
   else if (thousands === 3) kana += 'さんぜん';
+  else if (thousands === 8) kana += 'はっせん';
   else if (thousands > 0) kana += digits[thousands] + 'せん';
 
   if (hundreds === 1) kana += 'ひゃく';
@@ -648,13 +669,13 @@ function getYearKana(year) {
   return kana + 'ねん';
 }
 
-// build date structure and syntax data
 function constructDateData(year, month, day) {
   const y = parseInt(year, 10);
   const m = parseInt(month, 10);
   const d = parseInt(day, 10);
 
   const dateObj = new Date(y, m - 1, d);
+  dateObj.setFullYear(y);
   const dayOfWeekIndex = dateObj.getDay();
   const weekdayData = weekdays[dayOfWeekIndex];
 
@@ -691,24 +712,39 @@ function renderConjugationMatrix(data, filter = 'all') {
 
   tbody.innerHTML = '';
 
-  // update summary card
+  // guard clause for empty, null, or erroneous conjugation data
+  if (!data || !Array.isArray(data.forms) || data.forms.length === 0) {
+    if (countEl) {
+      countEl.textContent = currentLang === 'en' ? '0 Paradigmatic Inflections Generated' : '活用の生成結果: 0件';
+    }
+    if (summaryEl) {
+      summaryEl.innerHTML = `
+        <div class="summary-item">
+          <span class="summary-label">${currentLang === 'en' ? 'Status' : '状態'}</span>
+          <span class="summary-value">${escapeHTML(data && data.error ? data.error : 'No valid inflection data available')}</span>
+        </div>
+      `;
+    }
+    return;
+  }
+
   if (summaryEl) {
     summaryEl.innerHTML = `
       <div class="summary-item">
         <span class="summary-label">${currentLang === 'en' ? 'Lemma / Base' : '基本見出し語'}</span>
-        <span class="summary-value">${data.verb}</span>
+        <span class="summary-value">${escapeHTML(data.verb)}</span>
       </div>
       <div class="summary-item">
         <span class="summary-label">${currentLang === 'en' ? 'Morphological Class' : '文法分類'}</span>
-        <span class="summary-tag">${data.groupLabel}</span>
+        <span class="summary-tag">${escapeHTML(data.groupLabel)}</span>
       </div>
       <div class="summary-item">
         <span class="summary-label">${currentLang === 'en' ? 'Stem (語幹)' : '語幹'}</span>
-        <span class="summary-value meta-text">${data.stem || '∅'}</span>
+        <span class="summary-value meta-text">${escapeHTML(data.stem || '∅')}</span>
       </div>
       <div class="summary-item">
         <span class="summary-label">${currentLang === 'en' ? 'Citation Ending' : '語尾形態'}</span>
-        <span class="summary-value meta-text">${data.ending}</span>
+        <span class="summary-value meta-text">${escapeHTML(data.ending)}</span>
       </div>
     `;
   }
@@ -847,7 +883,6 @@ function getDurationKana(day) {
   return day + 'にちかん';
 }
 
-// update contextual sentence synthesizer
 function updateSynthesizer(dateData) {
   const predSelect = document.getElementById('predicate-select');
   const sentenceJa = document.getElementById('synth-sentence-ja');
