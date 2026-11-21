@@ -1,4 +1,4 @@
-# Nihongo Syntax Matrix (日本語統語行列)
+﻿# Nihongo Syntax Matrix (日本語統語行列)
 ### An Algorithmic Morphology, Conjugation, and Temporal Syntax Engine for Japanese Pedagogy
 
 ---
@@ -61,6 +61,34 @@ Ichidan verbs exhibit an invariant vowel root ending in either *-i* (上一段 K
 The two suppletive verbs of Japanese grammar:
 * **する (サ行変格活用):** Displays suppletive root alternations: *shi-* (連用形: します, して, した), *se-* (未然形: させる, される; 命令形: せよ), and *sur-* (終止形・仮定形: する, すれば). The engine natively supports complex Sino-Japanese verbal compounds (e.g., 勉強する, 案内する, 参加する).
 * **くる / 来る (カ行変格活用):** Exhibits vowel alternation in the root kanji itself: read as *ko-* in negative (*こない / 来ない*) and imperative (*こい / 来い*); *ki-* in continuative (*きます / 来ます*, *きて / 来て*); and *ku-* in dictionary form (*くる / 来る*).
+
+
+### 2.2 Boundary Resolution and Irregular Edge Cases
+
+Morphological tokenization in Japanese frequently encounters boundary ambiguities where standard vowel grade heuristics fail. The engine handles these linguistic corner cases through prioritized deterministic resolution stages:
+
+#### 1. Godan Lookalikes (一段もどき / False Ichidan Verbs)
+Standard pedagogical grammar dictates that verbs ending in *-iru* or *-eru* belong to Group 2 (Ichidan). However, dozens of essential Japanese verbs exhibit identical phonetic termination while inflecting strictly as Group 1 (Godan consonant-stems):
+- **Phonological Traps:** 帰る (*kaeru* / to return), 切る (*kiru* / to cut), 走る (*hashiru* / to run), 知る (*shiru* / to know), 入る (*hairu* / to enter), 喋る (*shaberu* / to chat).
+- **Engine Resolution:** The verbal pipeline evaluates a prioritized exception lexicon before applying the penultimate vowel-grade rule. If the lemma matches a Godan lookalike entry, the engine bypasses Ichidan suffix trimming and routes stem mutation through consonant gradation (*kaer-anai*, *kaer-imasu*, *kaet-te* via sokuonbin).
+
+#### 2. Complex Sino-Japanese Suru Compounds (複合サ変動詞)
+Verbs formed by appending する to Sino-Japanese two-kanji nouns (Kango 漢語) or foreign loanwords (Katakana e.g., ドライブする) require composite boundary decomposition:
+- **Lemma Partitioning:** The string parser isolates the nominal root from the irregular inflectional auxiliary:
+  $$\text{勉強する} \longrightarrow [\text{勉強}]_{\text{Noun}} + [\text{する}]_{\text{Aux}}$$
+- **Conjugation Mapping:** The nominal base is retained verbatim across all inflection states, while the terminal auxiliary undergoes irregular Sa-line sound shifts: 未然形 (*勉強しない*), 連用形 (*勉強します / 勉強して*), 仮定形 (*勉強すれば*), 意向形 (*勉強しよう*), 命令形 (*勉強しろ / 勉強せよ*).
+
+#### 3. Kuru Stem Orthography and Phonetic Alternation (カ行変格活用)
+The verb くる / 来る presents a dual challenge: non-linear vowel alternation combined with mixed script orthography (kanji vs. hiragana):
+- **Stem Vowel Alternation:** Unlike regular verbs with invariant stems, the root vowel itself shifts across three grades:
+  - *ko-* grade: 未然形 (*こない / 来ない*), 命令形 (*こい / 来い*)
+  - *ki-* grade: 連用形 (*きます / 来ます*, *きて / 来て*, *きた / 来た*)
+  - *ku-* grade: 終止形・連体形 (*くる / 来る*), 仮定形 (*くれば / 来れば*)
+- **Script Invariance:** The engine detects both bare kana input (*くる*) and ideographic kanji representation (*来る*), correctly generating furigana/readings corresponding to each inflection grade.
+
+#### 4. The Iku Euphonic Anomaly (促音便例外)
+For verbs ending in く (*ku*), standard historical sound change produces velar vocalization (イ音便 / *i-onbin*, e.g., 書く → 書いて). The sole major exception in modern Japanese is 行く (*iku* / to go):
+- **Exception Rule:** Rather than generating \**行いて (\**iite*), the engine traps the lemma 行く and routes conjunctive and past tense derivation into geminate stop assimilation (促音便 / *sokuonbin*), yielding 行って (*itte*) and 行った (*itta*).
 
 ---
 
