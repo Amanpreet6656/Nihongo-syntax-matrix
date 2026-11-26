@@ -1,4 +1,4 @@
-﻿# Nihongo Syntax Matrix (日本語統語行列)
+# Nihongo Syntax Matrix (日本語統語行列)
 ### An Algorithmic Morphology, Conjugation, and Temporal Syntax Engine for Japanese Pedagogy
 
 ---
@@ -123,7 +123,7 @@ The application is implemented under strict computational constraints to guarant
 * **Layout Engine:** Strict CSS Grid specification (`display: grid`) structuring multidimensional tabular matrices with predictable line-box alignment.
 * **Aesthetic Philosophy:** Rectilinear, austere typography. Elements maintain an absolute `border-radius: 0` geometry, reminiscent of traditional Japanese print dictionaries (*Jisho*) and technical reference manuals.
 * **State Persistence:** Local client `localStorage` cache preserving user preferences (`nsm_theme`, `nsm_lang`) without transmission.
-* **Zero Telemetry:** No analytics, trackers, external CDN fonts, or third-party network pings.
+* **Zero Telemetry:** No analytics or trackers; loads Inter and Noto Sans JP fonts from Google Fonts CDN with system fallbacks.
 
 ---
 

@@ -44,11 +44,11 @@ const godanRowMap = {
   'る': { a: 'ら', i: 'り', u: 'る', e: 'れ', o: 'ろ' }
 };
 
-// godan verbs that end in -iru/-eru... hardcoding this list for now bc japanese is weird
+// Exceptions: Godan consonant-stem verbs terminating in -iru or -eru
 const godanExceptions = new Set([
   '帰る', '切る', '入る', '走る', '知る', '要る', '減る', '蹴る',
   '喋る', '限る', '握る', '滑る', '焦る', '照る', '散る', '遮る',
-  'かえる', 'きる', 'はいる', 'はしる', 'しる', 'へる', 'ける',
+  '返る', '茂る', 'かえる', 'きる', 'はいる', 'はしる', 'しる', 'へる', 'ける',
   'しゃべる', 'かぎる', 'にぎる', 'すべる', 'あせる', 'ちる',
   '参る', 'まいる', '混じる', 'まじる', '交じる', '弄る', 'いじる',
   '捻る', 'ひねる', '嘲る', 'あざける', '覆る', 'くつがえる'
@@ -117,7 +117,30 @@ const canonicalReadings = {
   '座る': 'すわる',
   '働く': 'はたらく',
   '読む': 'よむ',
-  '聞く': 'きく'
+  '聞く': 'きく',
+  '作る': 'つくる',
+  '使う': 'つかう',
+  '調べる': 'しらべる',
+  '忘れる': 'わすれる',
+  '開ける': 'あける',
+  '閉める': 'しめる',
+  '泳ぐ': 'およぐ',
+  '返す': 'かえす',
+  '返る': 'かえる',
+  '切る': 'きる',
+  '入る': 'はいる',
+  '知る': 'しる',
+  '問う': 'とう',
+  '請う': 'こう',
+  'くださる': 'くださる',
+  '下さる': 'くださる',
+  'なさる': 'なさる',
+  '為さる': 'なさる',
+  'おっしゃる': 'おっしゃる',
+  '仰る': 'おっしゃる',
+  'いらっしゃる': 'いらっしゃる',
+  'ござる': 'ござる',
+  '御座る': 'ござる'
 };
 
 const uiText = {
@@ -412,35 +435,41 @@ function conjugateVerb(inputVerb, manualGroup) {
   const lastChar = chars[chars.length - 1];
   const baseStem = chars.slice(0, -1).join('');
 
-  const reading = canonicalReadings[verb] || verb;
+  const hasKanji = /[\u4E00-\u9FAF\u3400-\u4DBF]/.test(verb);
+  const reading = canonicalReadings[verb] || (hasKanji ? '' : verb);
   const readingChars = Array.from(reading);
-  const readBaseStem = readingChars.slice(0, -1).join('');
+  const readBaseStem = reading ? readingChars.slice(0, -1).join('') : '';
+  const hasReading = Boolean(reading);
 
   if (group === 'irregular-suru') {
     let prefix = '';
     let prefixReading = '';
     if (verb.endsWith('する')) {
       prefix = chars.slice(0, -2).join('');
-      prefixReading = readingChars.length >= 2 ? readingChars.slice(0, -2).join('') : prefix;
+      prefixReading = hasReading && readingChars.length >= 2 ? readingChars.slice(0, -2).join('') : '';
+    } else {
+      prefix = verb;
+      prefixReading = hasReading ? reading : '';
     }
+    const r = (suf) => hasReading ? (prefixReading + suf) : '';
 
     const forms = [
-      { id: 'dict', nameEn: 'Dictionary / Non-Past', nameJa: '辞書形 / 終止形', reg: 'plain', conj: prefix + 'する', read: prefixReading + 'する', stem: prefix, suf: 'する', morph: 'sur-u [Citation]', synEn: 'Present and future plain affirmative', synJa: '現在の習慣、確実な未来' },
-      { id: 'masu', nameEn: 'Polite Non-Past (-masu)', nameJa: 'ます形 / 丁寧形', reg: 'polite', conj: prefix + 'します', read: prefixReading + 'します', stem: prefix, suf: 'します', morph: 'shi-masu [Polite]', synEn: 'Polite affirmative statement', synJa: '丁寧な叙述・対話表現' },
-      { id: 'nai', nameEn: 'Plain Negative (-nai)', nameJa: '未然形・ない形', reg: 'plain', conj: prefix + 'しない', read: prefixReading + 'しない', stem: prefix, suf: 'しない', morph: 'shi-nai [Negative]', synEn: 'Plain negative assertion', synJa: '日常会話での否定表現' },
-      { id: 'masen', nameEn: 'Polite Negative (-masen)', nameJa: 'ません形', reg: 'polite', conj: prefix + 'しません', read: prefixReading + 'しません', stem: prefix, suf: 'しません', morph: 'shi-masen [Polite Neg]', synEn: 'Polite negative statement', synJa: '改まった否定叙述' },
-      { id: 'te', nameEn: 'Conjunctive (-te form)', nameJa: 'て形 / 接続形', reg: 'plain', conj: prefix + 'して', read: prefixReading + 'して', stem: prefix, suf: 'して', morph: 'shi-te [Continuative]', synEn: 'Sequential link, requests, continuous state', synJa: '動作の継起、依頼、進行状態' },
-      { id: 'ta', nameEn: 'Plain Past (-ta form)', nameJa: 'た形 / 過去形', reg: 'plain', conj: prefix + 'した', read: prefixReading + 'した', stem: prefix, suf: 'した', morph: 'shi-ta [Past/Perfect]', synEn: 'Completed past action or state', synJa: '過去の完了・事象の確定' },
-      { id: 'mashita', nameEn: 'Polite Past (-mashita)', nameJa: 'ました形', reg: 'polite', conj: prefix + 'しました', read: prefixReading + 'しました', stem: prefix, suf: 'しました', morph: 'shi-mashita [Polite Past]', synEn: 'Polite completed past', synJa: '丁寧な過去の叙述' },
-      { id: 'masen_deshita', nameEn: 'Polite Past Neg (-masen deshita)', nameJa: 'ませんでした形', reg: 'polite', conj: prefix + 'しませんでした', read: prefixReading + 'しませんでした', stem: prefix, suf: 'しませんでした', morph: 'shi-masen deshita', synEn: 'Formal past negation', synJa: '過去の出来事の丁寧な否定' },
-      { id: 'nakatta', nameEn: 'Plain Past Negative (-nakatta)', nameJa: 'なかった形', reg: 'plain', conj: prefix + 'しなかった', read: prefixReading + 'しなかった', stem: prefix, suf: 'しなかった', morph: 'shi-nakatta [Past Neg]', synEn: 'Plain past negative assertion', synJa: '日常的な過去否定' },
-      { id: 'potential', nameEn: 'Potential Form', nameJa: '可能形', reg: 'plain', conj: prefix + 'できる', read: prefixReading + 'できる', stem: prefix, suf: 'できる', morph: 'dekiru [Suppletive]', synEn: 'Capability, possibility, permission', synJa: '能力可能・状況可能' },
-      { id: 'passive', nameEn: 'Passive Form (-reru)', nameJa: '受身形', reg: 'plain', conj: prefix + 'される', read: prefixReading + 'される', stem: prefix, suf: 'される', morph: 's-areru [Passive]', synEn: 'Direct/indirect passive, honorific', synJa: '被動・迷惑受け身・尊敬' },
-      { id: 'causative', nameEn: 'Causative Form (-saseru)', nameJa: '使役形', reg: 'plain', conj: prefix + 'させる', read: prefixReading + 'させる', stem: prefix, suf: 'させる', morph: 's-aseru [Causative]', synEn: 'Make or let someone perform action', synJa: '他者への指示・許容' },
-      { id: 'imperative', nameEn: 'Imperative Form', nameJa: '命令形', reg: 'plain', conj: prefix + 'しろ', read: prefixReading + 'しろ', stem: prefix, suf: 'しろ', morph: 'shi-ro [Direct Command]', synEn: 'Direct command (spoken)', synJa: '直接命令（日常・指示）' },
-      { id: 'volitional', nameEn: 'Volitional Form (-ō)', nameJa: '意向形', reg: 'plain', conj: prefix + 'しよう', read: prefixReading + 'しよう', stem: prefix, suf: 'しよう', morph: 'shi-yō [Intention/Cohortative]', synEn: 'Personal intention, proposal ("Let\'s")', synJa: '話者の意志・共同誘致' },
-      { id: 'ba', nameEn: 'Provisional Conditional (-ba)', nameJa: '仮定形・ば形', reg: 'plain', conj: prefix + 'すれば', read: prefixReading + 'すれば', stem: prefix, suf: 'すれば', morph: 'sur-eba [Provisional]', synEn: 'General condition or hypothetical prerequisite', synJa: '論理的条件・仮定' },
-      { id: 'tara', nameEn: 'General Conditional (-tara)', nameJa: '条件形・たら形', reg: 'plain', conj: prefix + 'したら', read: prefixReading + 'したら', stem: prefix, suf: 'したら', morph: 'shi-tara [Temporal/Conditional]', synEn: 'Sequence ("When/If... then")', synJa: '時間的継起・個別条件' }
+      { id: 'dict', nameEn: 'Dictionary / Non-Past', nameJa: '辞書形 / 終止形', reg: 'plain', conj: prefix + 'する', read: r('する'), stem: prefix, suf: 'する', morph: 'sur-u [Citation]', synEn: 'Present and future plain affirmative', synJa: '現在の習慣、確実な未来' },
+      { id: 'masu', nameEn: 'Polite Non-Past (-masu)', nameJa: 'ます形 / 丁寧形', reg: 'polite', conj: prefix + 'します', read: r('します'), stem: prefix, suf: 'します', morph: 'shi-masu [Polite]', synEn: 'Polite affirmative statement', synJa: '丁寧な叙述・対話表現' },
+      { id: 'nai', nameEn: 'Plain Negative (-nai)', nameJa: '未然形・ない形', reg: 'plain', conj: prefix + 'しない', read: r('しない'), stem: prefix, suf: 'しない', morph: 'shi-nai [Negative]', synEn: 'Plain negative assertion', synJa: '日常会話での否定表現' },
+      { id: 'masen', nameEn: 'Polite Negative (-masen)', nameJa: 'ません形', reg: 'polite', conj: prefix + 'しません', read: r('しません'), stem: prefix, suf: 'しません', morph: 'shi-masen [Polite Neg]', synEn: 'Polite negative statement', synJa: '改まった否定叙述' },
+      { id: 'te', nameEn: 'Conjunctive (-te form)', nameJa: 'て形 / 接続形', reg: 'plain', conj: prefix + 'して', read: r('して'), stem: prefix, suf: 'して', morph: 'shi-te [Continuative]', synEn: 'Sequential link, requests, continuous state', synJa: '動作の継起、依頼、進行状態' },
+      { id: 'ta', nameEn: 'Plain Past (-ta form)', nameJa: 'た形 / 過去形', reg: 'plain', conj: prefix + 'した', read: r('した'), stem: prefix, suf: 'した', morph: 'shi-ta [Past/Perfect]', synEn: 'Completed past action or state', synJa: '過去の完了・事象の確定' },
+      { id: 'mashita', nameEn: 'Polite Past (-mashita)', nameJa: 'ました形', reg: 'polite', conj: prefix + 'しました', read: r('しました'), stem: prefix, suf: 'しました', morph: 'shi-mashita [Polite Past]', synEn: 'Polite completed past', synJa: '丁寧な過去の叙述' },
+      { id: 'masen_deshita', nameEn: 'Polite Past Neg (-masen deshita)', nameJa: 'ませんでした形', reg: 'polite', conj: prefix + 'しませんでした', read: r('しませんでした'), stem: prefix, suf: 'しませんでした', morph: 'shi-masen deshita', synEn: 'Formal past negation', synJa: '過去の出来事の丁寧な否定' },
+      { id: 'nakatta', nameEn: 'Plain Past Negative (-nakatta)', nameJa: 'なかった形', reg: 'plain', conj: prefix + 'しなかった', read: r('しなかった'), stem: prefix, suf: 'しなかった', morph: 'shi-nakatta [Past Neg]', synEn: 'Plain past negative assertion', synJa: '日常的な過去否定' },
+      { id: 'potential', nameEn: 'Potential Form', nameJa: '可能形', reg: 'plain', conj: prefix + 'できる', read: r('できる'), stem: prefix, suf: 'できる', morph: 'dekiru [Suppletive]', synEn: 'Capability, possibility, permission', synJa: '能力可能・状況可能' },
+      { id: 'passive', nameEn: 'Passive Form (-reru)', nameJa: '受身形', reg: 'plain', conj: prefix + 'される', read: r('される'), stem: prefix, suf: 'される', morph: 's-areru [Passive]', synEn: 'Direct/indirect passive, honorific', synJa: '被動・迷惑受け身・尊敬' },
+      { id: 'causative', nameEn: 'Causative Form (-saseru)', nameJa: '使役形', reg: 'plain', conj: prefix + 'させる', read: r('させる'), stem: prefix, suf: 'させる', morph: 's-aseru [Causative]', synEn: 'Make or let someone perform action', synJa: '他者への指示・許容' },
+      { id: 'imperative', nameEn: 'Imperative Form', nameJa: '命令形', reg: 'plain', conj: prefix + 'しろ', read: r('しろ'), stem: prefix, suf: 'しろ', morph: 'shi-ro [Direct Command]', synEn: 'Direct command (spoken)', synJa: '直接命令（日常・指示）' },
+      { id: 'volitional', nameEn: 'Volitional Form (-ō)', nameJa: '意向形', reg: 'plain', conj: prefix + 'しよう', read: r('しよう'), stem: prefix, suf: 'しよう', morph: 'shi-yō [Intention/Cohortative]', synEn: 'Personal intention, proposal ("Let\'s")', synJa: '話者の意志・共同誘致' },
+      { id: 'ba', nameEn: 'Provisional Conditional (-ba)', nameJa: '仮定形・ば形', reg: 'plain', conj: prefix + 'すれば', read: r('すれば'), stem: prefix, suf: 'すれば', morph: 'sur-eba [Provisional]', synEn: 'General condition or hypothetical prerequisite', synJa: '論理的条件・仮定' },
+      { id: 'tara', nameEn: 'General Conditional (-tara)', nameJa: '条件形・たら形', reg: 'plain', conj: prefix + 'したら', read: r('したら'), stem: prefix, suf: 'したら', morph: 'shi-tara [Temporal/Conditional]', synEn: 'Sequence ("When/If... then")', synJa: '時間的継起・個別条件' }
     ];
     return { verb, group, groupLabel: 'Group 3: Irregular する (サ行変格活用)', stem: prefix, ending: 'する', forms };
   }
@@ -448,25 +477,26 @@ function conjugateVerb(inputVerb, manualGroup) {
   if (group === 'irregular-kuru') {
     const isKanji = verb.includes('来');
     const prefix = verb.replace(/くる|来る$/, '');
-    const prefixReading = reading.replace(/くる|来る$/, '');
+    const prefixReading = hasReading ? reading.replace(/くる|来る$/, '') : '';
+    const r = (suf) => hasReading ? (prefixReading + suf) : '';
 
     const forms = [
-      { id: 'dict', nameEn: 'Dictionary / Non-Past', nameJa: '辞書形 / 終止形', reg: 'plain', conj: prefix + (isKanji ? '来る' : 'くる'), read: prefixReading + 'くる', stem: prefix + (isKanji ? '来' : 'く'), suf: 'る', morph: 'ku-ru [Citation]', synEn: 'Affirmative non-past motion toward speaker', synJa: '話者方向への移動' },
-      { id: 'masu', nameEn: 'Polite Non-Past (-masu)', nameJa: 'ます形 / 丁寧形', reg: 'polite', conj: prefix + (isKanji ? '来ます' : 'きます'), read: prefixReading + 'きます', stem: prefix + (isKanji ? '来' : 'き'), suf: 'ます', morph: 'ki-masu [Polite]', synEn: 'Polite arrival or motion', synJa: '丁寧な到来の叙述' },
-      { id: 'nai', nameEn: 'Plain Negative (-nai)', nameJa: '未然形・ない形', reg: 'plain', conj: prefix + (isKanji ? '来ない' : 'こない'), read: prefixReading + 'こない', stem: prefix + (isKanji ? '来' : 'こ'), suf: 'ない', morph: 'ko-nai [Negative stem shift]', synEn: 'Negative non-past (root shifts to ko-)', synJa: '母音変化を伴う否定' },
-      { id: 'masen', nameEn: 'Polite Negative (-masen)', nameJa: 'ません形', reg: 'polite', conj: prefix + (isKanji ? '来ません' : 'きません'), read: prefixReading + 'きません', stem: prefix + (isKanji ? '来' : 'き'), suf: 'ません', morph: 'ki-masen [Polite Neg]', synEn: 'Formal negative motion', synJa: '改まった否定' },
-      { id: 'te', nameEn: 'Conjunctive (-te form)', nameJa: 'て形 / 接続形', reg: 'plain', conj: prefix + (isKanji ? '来て' : 'きて'), read: prefixReading + 'きて', stem: prefix + (isKanji ? '来' : 'き'), suf: 'て', morph: 'ki-te [Continuative]', synEn: 'Sequential link, approaching state', synJa: '継起・接近状態の表現' },
-      { id: 'ta', nameEn: 'Plain Past (-ta form)', nameJa: 'た形 / 過去形', reg: 'plain', conj: prefix + (isKanji ? '来た' : 'きた'), read: prefixReading + 'きた', stem: prefix + (isKanji ? '来' : 'き'), suf: 'た', morph: 'ki-ta [Past]', synEn: 'Completed arrival', synJa: '過去の到着' },
-      { id: 'mashita', nameEn: 'Polite Past (-mashita)', nameJa: 'ました形', reg: 'polite', conj: prefix + (isKanji ? '来ました' : 'きました'), read: prefixReading + 'きました', stem: prefix + (isKanji ? '来' : 'き'), suf: 'ました', morph: 'ki-mashita [Polite Past]', synEn: 'Formal completed arrival', synJa: '丁寧な過去の到着' },
-      { id: 'masen_deshita', nameEn: 'Polite Past Neg (-masen deshita)', nameJa: 'ませんでした形', reg: 'polite', conj: prefix + (isKanji ? '来ませんでした' : 'きませんでした'), read: prefixReading + 'きませんでした', stem: prefix + (isKanji ? '来' : 'き'), suf: 'ませんでした', morph: 'ki-masen deshita', synEn: 'Formal negative past', synJa: '丁寧な過去否定' },
-      { id: 'nakatta', nameEn: 'Plain Past Negative (-nakatta)', nameJa: 'なかった形', reg: 'plain', conj: prefix + (isKanji ? '来なかった' : 'こなかった'), read: prefixReading + 'こなかった', stem: prefix + (isKanji ? '来' : 'こ'), suf: 'なかった', morph: 'ko-nakatta [Past Neg]', synEn: 'Plain past negative', synJa: '日常的な過去否定' },
-      { id: 'potential', nameEn: 'Potential Form', nameJa: '可能形', reg: 'plain', conj: prefix + (isKanji ? '来られる' : 'こられる'), read: prefixReading + 'こられる', stem: prefix + (isKanji ? '来' : 'こ'), suf: 'られる', morph: 'ko-rareru [Potential]', synEn: 'Ability to come', synJa: '来訪可能性・能力' },
-      { id: 'passive', nameEn: 'Passive Form (-reru)', nameJa: '受身形', reg: 'plain', conj: prefix + (isKanji ? '来られる' : 'こられる'), read: prefixReading + 'こられる', stem: prefix + (isKanji ? '来' : 'こ'), suf: 'られる', morph: 'ko-rareru [Adversity Passive]', synEn: 'Adversative passive ("visited upon")', synJa: '迷惑の受身' },
-      { id: 'causative', nameEn: 'Causative Form (-saseru)', nameJa: '使役形', reg: 'plain', conj: prefix + (isKanji ? '来させる' : 'こさせる'), read: prefixReading + 'こさせる', stem: prefix + (isKanji ? '来' : 'こ'), suf: 'させる', morph: 'ko-saseru [Causative]', synEn: 'Cause someone to come', synJa: '他者を来訪させる' },
-      { id: 'imperative', nameEn: 'Imperative Form', nameJa: '命令形', reg: 'plain', conj: prefix + (isKanji ? '来い' : 'こい'), read: prefixReading + 'こい', stem: prefix + (isKanji ? '来' : 'こ'), suf: 'い', morph: 'ko-i [Imperative]', synEn: 'Direct command to come', synJa: '強い呼び寄せ命令' },
-      { id: 'volitional', nameEn: 'Volitional Form (-ō)', nameJa: '意向形', reg: 'plain', conj: prefix + (isKanji ? '来よう' : 'こよう'), read: prefixReading + 'こよう', stem: prefix + (isKanji ? '来' : 'こ'), suf: 'よう', morph: 'ko-yō [Volitional]', synEn: 'Intention to come', synJa: '来訪の意志' },
-      { id: 'ba', nameEn: 'Provisional Conditional (-ba)', nameJa: '仮定形・ば形', reg: 'plain', conj: prefix + (isKanji ? '来れば' : 'くれば'), read: prefixReading + 'くれば', stem: prefix + (isKanji ? '来' : 'く'), suf: 'れば', morph: 'kur-eba [Provisional]', synEn: 'If someone comes', synJa: '仮定条件' },
-      { id: 'tara', nameEn: 'General Conditional (-tara)', nameJa: '条件形・たら形', reg: 'plain', conj: prefix + (isKanji ? '来たら' : 'きたら'), read: prefixReading + 'きたら', stem: prefix + (isKanji ? '来' : 'き'), suf: 'たら', morph: 'ki-tara [Temporal/Conditional]', synEn: 'Once arrival occurs', synJa: '来訪後の継起' }
+      { id: 'dict', nameEn: 'Dictionary / Non-Past', nameJa: '辞書形 / 終止形', reg: 'plain', conj: prefix + (isKanji ? '来る' : 'くる'), read: r('くる'), stem: prefix + (isKanji ? '来' : 'く'), suf: 'る', morph: 'ku-ru [Citation]', synEn: 'Affirmative non-past motion toward speaker', synJa: '話者方向への移動' },
+      { id: 'masu', nameEn: 'Polite Non-Past (-masu)', nameJa: 'ます形 / 丁寧形', reg: 'polite', conj: prefix + (isKanji ? '来ます' : 'きます'), read: r('きます'), stem: prefix + (isKanji ? '来' : 'き'), suf: 'ます', morph: 'ki-masu [Polite]', synEn: 'Polite arrival or motion', synJa: '丁寧な到来の叙述' },
+      { id: 'nai', nameEn: 'Plain Negative (-nai)', nameJa: '未然形・ない形', reg: 'plain', conj: prefix + (isKanji ? '来ない' : 'こない'), read: r('こない'), stem: prefix + (isKanji ? '来' : 'こ'), suf: 'ない', morph: 'ko-nai [Negative stem shift]', synEn: 'Negative non-past (root shifts to ko-)', synJa: '母音変化を伴う否定' },
+      { id: 'masen', nameEn: 'Polite Negative (-masen)', nameJa: 'ません形', reg: 'polite', conj: prefix + (isKanji ? '来ません' : 'きません'), read: r('きません'), stem: prefix + (isKanji ? '来' : 'き'), suf: 'ません', morph: 'ki-masen [Polite Neg]', synEn: 'Formal negative motion', synJa: '改まった否定' },
+      { id: 'te', nameEn: 'Conjunctive (-te form)', nameJa: 'て形 / 接続形', reg: 'plain', conj: prefix + (isKanji ? '来て' : 'きて'), read: r('きて'), stem: prefix + (isKanji ? '来' : 'き'), suf: 'て', morph: 'ki-te [Continuative]', synEn: 'Sequential link, approaching state', synJa: '継起・接近状態の表現' },
+      { id: 'ta', nameEn: 'Plain Past (-ta form)', nameJa: 'た形 / 過去形', reg: 'plain', conj: prefix + (isKanji ? '来た' : 'きた'), read: r('きた'), stem: prefix + (isKanji ? '来' : 'き'), suf: 'た', morph: 'ki-ta [Past]', synEn: 'Completed arrival', synJa: '過去の到着' },
+      { id: 'mashita', nameEn: 'Polite Past (-mashita)', nameJa: 'ました形', reg: 'polite', conj: prefix + (isKanji ? '来ました' : 'きました'), read: r('きました'), stem: prefix + (isKanji ? '来' : 'き'), suf: 'ました', morph: 'ki-mashita [Polite Past]', synEn: 'Formal completed arrival', synJa: '丁寧な過去の到着' },
+      { id: 'masen_deshita', nameEn: 'Polite Past Neg (-masen deshita)', nameJa: 'ませんでした形', reg: 'polite', conj: prefix + (isKanji ? '来ませんでした' : 'きませんでした'), read: r('きませんでした'), stem: prefix + (isKanji ? '来' : 'き'), suf: 'ませんでした', morph: 'ki-masen deshita', synEn: 'Formal negative past', synJa: '丁寧な過去否定' },
+      { id: 'nakatta', nameEn: 'Plain Past Negative (-nakatta)', nameJa: 'なかった形', reg: 'plain', conj: prefix + (isKanji ? '来なかった' : 'こなかった'), read: r('こなかった'), stem: prefix + (isKanji ? '来' : 'こ'), suf: 'なかった', morph: 'ko-nakatta [Past Neg]', synEn: 'Plain past negative', synJa: '日常的な過去否定' },
+      { id: 'potential', nameEn: 'Potential Form', nameJa: '可能形', reg: 'plain', conj: prefix + (isKanji ? '来られる' : 'こられる'), read: r('こられる'), stem: prefix + (isKanji ? '来' : 'こ'), suf: 'られる', morph: 'ko-rareru [Potential]', synEn: 'Ability to come', synJa: '来訪可能性・能力' },
+      { id: 'passive', nameEn: 'Passive Form (-reru)', nameJa: '受身形', reg: 'plain', conj: prefix + (isKanji ? '来られる' : 'こられる'), read: r('こられる'), stem: prefix + (isKanji ? '来' : 'こ'), suf: 'られる', morph: 'ko-rareru [Adversity Passive]', synEn: 'Adversative passive ("visited upon")', synJa: '迷惑の受身' },
+      { id: 'causative', nameEn: 'Causative Form (-saseru)', nameJa: '使役形', reg: 'plain', conj: prefix + (isKanji ? '来させる' : 'こさせる'), read: r('こさせる'), stem: prefix + (isKanji ? '来' : 'こ'), suf: 'させる', morph: 'ko-saseru [Causative]', synEn: 'Cause someone to come', synJa: '他者を来訪させる' },
+      { id: 'imperative', nameEn: 'Imperative Form', nameJa: '命令形', reg: 'plain', conj: prefix + (isKanji ? '来い' : 'こい'), read: r('こい'), stem: prefix + (isKanji ? '来' : 'こ'), suf: 'い', morph: 'ko-i [Imperative]', synEn: 'Direct command to come', synJa: '強い呼び寄せ命令' },
+      { id: 'volitional', nameEn: 'Volitional Form (-ō)', nameJa: '意向形', reg: 'plain', conj: prefix + (isKanji ? '来よう' : 'こよう'), read: r('こよう'), stem: prefix + (isKanji ? '来' : 'こ'), suf: 'よう', morph: 'ko-yō [Volitional]', synEn: 'Intention to come', synJa: '来訪の意志' },
+      { id: 'ba', nameEn: 'Provisional Conditional (-ba)', nameJa: '仮定形・ば形', reg: 'plain', conj: prefix + (isKanji ? '来れば' : 'くれば'), read: r('くれば'), stem: prefix + (isKanji ? '来' : 'く'), suf: 'れば', morph: 'kur-eba [Provisional]', synEn: 'If someone comes', synJa: '仮定条件' },
+      { id: 'tara', nameEn: 'General Conditional (-tara)', nameJa: '条件形・たら形', reg: 'plain', conj: prefix + (isKanji ? '来たら' : 'きたら'), read: r('きたら'), stem: prefix + (isKanji ? '来' : 'き'), suf: 'たら', morph: 'ki-tara [Temporal/Conditional]', synEn: 'Once arrival occurs', synJa: '来訪後の継起' }
     ];
     return { verb, group, groupLabel: 'Group 3: Irregular くる (カ行変格活用)', stem: prefix + (isKanji ? '来' : 'く'), ending: 'る', forms };
   }
@@ -474,23 +504,24 @@ function conjugateVerb(inputVerb, manualGroup) {
   if (group === 'ichidan') {
     const stem = baseStem;
     const readStem = readBaseStem;
+    const r = (suf) => hasReading ? (readStem + suf) : '';
     const forms = [
-      { id: 'dict', nameEn: 'Dictionary / Non-Past', nameJa: '辞書形 / 終止形', reg: 'plain', conj: stem + 'る', read: readStem + 'る', stem, suf: 'る', morph: 'stem + ru [Citation]', synEn: 'Affirmative non-past', synJa: '現在の習慣、将来の事象' },
-      { id: 'masu', nameEn: 'Polite Non-Past (-masu)', nameJa: 'ます形 / 丁寧形', reg: 'polite', conj: stem + 'ます', read: readStem + 'ます', stem, suf: 'ます', morph: 'stem + masu [Polite]', synEn: 'Polite affirmative statement', synJa: '日常対話における丁寧表現' },
-      { id: 'nai', nameEn: 'Plain Negative (-nai)', nameJa: '未然形・ない形', reg: 'plain', conj: stem + 'ない', read: readStem + 'ない', stem, suf: 'ない', morph: 'stem + nai [Negative]', synEn: 'Plain negation', synJa: '日常的な否定表現' },
-      { id: 'masen', nameEn: 'Polite Negative (-masen)', nameJa: 'ません形', reg: 'polite', conj: stem + 'ません', read: readStem + 'ません', stem, suf: 'ません', morph: 'stem + masen [Polite Neg]', synEn: 'Polite negative statement', synJa: '改まった丁寧な否定' },
-      { id: 'te', nameEn: 'Conjunctive (-te form)', nameJa: 'て形 / 接続形', reg: 'plain', conj: stem + 'て', read: readStem + 'て', stem, suf: 'て', morph: 'stem + te [Continuative]', synEn: 'Sequential link, requests, aspect', synJa: '文の接続、依頼、進行状態' },
-      { id: 'ta', nameEn: 'Plain Past (-ta form)', nameJa: 'た形 / 過去形', reg: 'plain', conj: stem + 'た', read: readStem + 'た', stem, suf: 'た', morph: 'stem + ta [Past]', synEn: 'Completed past action', synJa: '過去の完了・事象' },
-      { id: 'mashita', nameEn: 'Polite Past (-mashita)', nameJa: 'ました形', reg: 'polite', conj: stem + 'ました', read: readStem + 'ました', stem, suf: 'ました', morph: 'stem + mashita [Polite Past]', synEn: 'Formal completed past', synJa: '丁寧な過去の叙述' },
-      { id: 'masen_deshita', nameEn: 'Polite Past Neg (-masen deshita)', nameJa: 'ませんでした形', reg: 'polite', conj: stem + 'ませんでした', read: readStem + 'ませんでした', stem, suf: 'ませんでした', morph: 'stem + masen deshita', synEn: 'Formal negative past', synJa: '丁寧な過去否定' },
-      { id: 'nakatta', nameEn: 'Plain Past Negative (-nakatta)', nameJa: 'なかった形', reg: 'plain', conj: stem + 'なかった', read: readStem + 'なかった', stem, suf: 'なかった', morph: 'stem + nakatta [Past Neg]', synEn: 'Plain past negation', synJa: '日常的な過去否定' },
-      { id: 'potential', nameEn: 'Potential Form', nameJa: '可能形', reg: 'plain', conj: stem + 'られる', read: readStem + 'られる', stem, suf: 'られる', morph: 'stem + rareru [Potential]', synEn: 'Ability or possibility', synJa: '能力可能・状況可能' },
-      { id: 'passive', nameEn: 'Passive Form (-reru)', nameJa: '受身形', reg: 'plain', conj: stem + 'られる', read: readStem + 'られる', stem, suf: 'られる', morph: 'stem + rareru [Passive]', synEn: 'Passive construction, honorific', synJa: '受動態・間接受け身・尊敬' },
-      { id: 'causative', nameEn: 'Causative Form (-saseru)', nameJa: '使役形', reg: 'plain', conj: stem + 'させる', read: readStem + 'させる', stem, suf: 'させる', morph: 'stem + saseru [Causative]', synEn: 'Compel or permit action', synJa: '他者に動作を行わせる' },
-      { id: 'imperative', nameEn: 'Imperative Form', nameJa: '命令形', reg: 'plain', conj: stem + 'ろ', read: readStem + 'ろ', stem, suf: 'ろ', morph: 'stem + ro [Imperative]', synEn: 'Direct command', synJa: '命令表現' },
-      { id: 'volitional', nameEn: 'Volitional Form (-ō)', nameJa: '意向形', reg: 'plain', conj: stem + 'よう', read: readStem + 'よう', stem, suf: 'よう', morph: 'stem + yō [Volitional]', synEn: 'Personal intention, proposal', synJa: '話者の意志・勧誘' },
-      { id: 'ba', nameEn: 'Provisional Conditional (-ba)', nameJa: '仮定形・ば形', reg: 'plain', conj: stem + 'れば', read: readStem + 'れば', stem, suf: 'れば', morph: 'stem + reba [Provisional]', synEn: 'Hypothetical or general condition', synJa: '仮定条件' },
-      { id: 'tara', nameEn: 'General Conditional (-tara)', nameJa: '条件形・たら形', reg: 'plain', conj: stem + 'たら', read: readStem + 'たら', stem, suf: 'たら', morph: 'stem + tara [Conditional]', synEn: 'Condition or sequential completion', synJa: '動作完了後の継起' }
+      { id: 'dict', nameEn: 'Dictionary / Non-Past', nameJa: '辞書形 / 終止形', reg: 'plain', conj: stem + 'る', read: r('る'), stem, suf: 'る', morph: 'stem + ru [Citation]', synEn: 'Affirmative non-past', synJa: '現在の習慣、将来の事象' },
+      { id: 'masu', nameEn: 'Polite Non-Past (-masu)', nameJa: 'ます形 / 丁寧形', reg: 'polite', conj: stem + 'ます', read: r('ます'), stem, suf: 'ます', morph: 'stem + masu [Polite]', synEn: 'Polite affirmative statement', synJa: '日常対話における丁寧表現' },
+      { id: 'nai', nameEn: 'Plain Negative (-nai)', nameJa: '未然形・ない形', reg: 'plain', conj: stem + 'ない', read: r('ない'), stem, suf: 'ない', morph: 'stem + nai [Negative]', synEn: 'Plain negation', synJa: '日常的な否定表現' },
+      { id: 'masen', nameEn: 'Polite Negative (-masen)', nameJa: 'ません形', reg: 'polite', conj: stem + 'ません', read: r('ません'), stem, suf: 'ません', morph: 'stem + masen [Polite Neg]', synEn: 'Polite negative statement', synJa: '改まった丁寧な否定' },
+      { id: 'te', nameEn: 'Conjunctive (-te form)', nameJa: 'て形 / 接続形', reg: 'plain', conj: stem + 'て', read: r('て'), stem, suf: 'て', morph: 'stem + te [Continuative]', synEn: 'Sequential link, requests, aspect', synJa: '文の接続、依頼、進行状態' },
+      { id: 'ta', nameEn: 'Plain Past (-ta form)', nameJa: 'た形 / 過去形', reg: 'plain', conj: stem + 'た', read: r('た'), stem, suf: 'た', morph: 'stem + ta [Past]', synEn: 'Completed past action', synJa: '過去の完了・事象' },
+      { id: 'mashita', nameEn: 'Polite Past (-mashita)', nameJa: 'ました形', reg: 'polite', conj: stem + 'ました', read: r('ました'), stem, suf: 'ました', morph: 'stem + mashita [Polite Past]', synEn: 'Formal completed past', synJa: '丁寧な過去の叙述' },
+      { id: 'masen_deshita', nameEn: 'Polite Past Neg (-masen deshita)', nameJa: 'ませんでした形', reg: 'polite', conj: stem + 'ませんでした', read: r('ませんでした'), stem, suf: 'ませんでした', morph: 'stem + masen deshita', synEn: 'Formal negative past', synJa: '丁寧な過去否定' },
+      { id: 'nakatta', nameEn: 'Plain Past Negative (-nakatta)', nameJa: 'なかった形', reg: 'plain', conj: stem + 'なかった', read: r('なかった'), stem, suf: 'なかった', morph: 'stem + nakatta [Past Neg]', synEn: 'Plain past negation', synJa: '日常的な過去否定' },
+      { id: 'potential', nameEn: 'Potential Form', nameJa: '可能形', reg: 'plain', conj: stem + 'られる', read: r('られる'), stem, suf: 'られる', morph: 'stem + rareru [Potential]', synEn: 'Ability or possibility', synJa: '能力可能・状況可能' },
+      { id: 'passive', nameEn: 'Passive Form (-reru)', nameJa: '受身形', reg: 'plain', conj: stem + 'られる', read: r('られる'), stem, suf: 'られる', morph: 'stem + rareru [Passive]', synEn: 'Passive construction, honorific', synJa: '受動態・間接受け身・尊敬' },
+      { id: 'causative', nameEn: 'Causative Form (-saseru)', nameJa: '使役形', reg: 'plain', conj: stem + 'させる', read: r('させる'), stem, suf: 'させる', morph: 'stem + saseru [Causative]', synEn: 'Compel or permit action', synJa: '他者に動作を行わせる' },
+      { id: 'imperative', nameEn: 'Imperative Form', nameJa: '命令形', reg: 'plain', conj: stem + 'ろ', read: r('ろ'), stem, suf: 'ろ', morph: 'stem + ro [Imperative]', synEn: 'Direct command', synJa: '命令表現' },
+      { id: 'volitional', nameEn: 'Volitional Form (-ō)', nameJa: '意向形', reg: 'plain', conj: stem + 'よう', read: r('よう'), stem, suf: 'よう', morph: 'stem + yō [Volitional]', synEn: 'Personal intention, proposal', synJa: '話者の意志・勧誘' },
+      { id: 'ba', nameEn: 'Provisional Conditional (-ba)', nameJa: '仮定形・ば形', reg: 'plain', conj: stem + 'れば', read: r('れば'), stem, suf: 'れば', morph: 'stem + reba [Provisional]', synEn: 'Hypothetical or general condition', synJa: '仮定条件' },
+      { id: 'tara', nameEn: 'General Conditional (-tara)', nameJa: '条件形・たら形', reg: 'plain', conj: stem + 'たら', read: r('たら'), stem, suf: 'たら', morph: 'stem + tara [Conditional]', synEn: 'Condition or sequential completion', synJa: '動作完了後の継起' }
     ];
     return { verb, group, groupLabel: 'Group 2: Ichidan (一段動詞)', stem, ending: 'る', forms };
   }
@@ -498,12 +529,13 @@ function conjugateVerb(inputVerb, manualGroup) {
   const row = godanRowMap[lastChar] || { a: 'わ', i: 'い', u: 'う', e: 'え', o: 'お' };
   const stem = baseStem;
   const readStem = readBaseStem;
+  const r = (suf) => hasReading ? (readStem + suf) : '';
 
-  // iku is weird and uses って instead of いて
+  // Suppletive and irregular Godan subclasses (iku sokuonbin, aru suppletive negative)
   const isIku = (verb.endsWith('行く') || verb.endsWith('いく'));
   const isAru = (verb === 'ある' || verb === '有る');
 
-  // honorific verbs conjugate weirdly in polite/imperative (kudasai instead of kadasare)
+  // Honorific -aru verbs drop -r in continuative/imperative stems (e.g., kudasaru -> kudasaimasu / kudasai)
   const keigoList = ['くださる', '下さる', 'なさる', '為さる', 'おっしゃる', '仰る', '仰っしゃる', 'いらっしゃる', '居らっしゃる', 'ござる', '御座る'];
   const isKeigo = keigoList.some(k => verb.endsWith(k));
   const iSound = isKeigo ? 'い' : row.i;
@@ -512,7 +544,8 @@ function conjugateVerb(inputVerb, manualGroup) {
   let teSuffix = '';
   let taSuffix = '';
   let taraSuffix = '';
-  let euphonyNote = '';
+  let euphonyNoteTe = '';
+  let euphonyNoteTa = '';
 
   const isTou = (verb === '問う' || verb === 'とう' || verb === '請う' || verb === 'こう');
 
@@ -520,65 +553,72 @@ function conjugateVerb(inputVerb, manualGroup) {
     teSuffix = 'って';
     taSuffix = 'った';
     taraSuffix = 'ったら';
-    euphonyNote = '促音便 (Sokuonbin exception for iku)';
+    euphonyNoteTe = '促音便 (Sokuonbin exception for iku)';
+    euphonyNoteTa = '促音便 (Sokuonbin exception for iku, past)';
   } else if (isTou) {
-    // tou and kou do u-onbin (oute/koute) instead of otte/kotte, weird exception
+    // Classical u-onbin retained in modern standard Japanese for tou and kou
     teSuffix = 'うて';
     taSuffix = 'うた';
     taraSuffix = 'うたら';
-    euphonyNote = 'ウ音便 (U-onbin exception for tou/kou)';
+    euphonyNoteTe = 'ウ音便 (U-onbin exception for tou/kou)';
+    euphonyNoteTa = 'ウ音便 (U-onbin exception for tou/kou, past)';
   } else if (lastChar === 'う' || lastChar === 'つ' || lastChar === 'る') {
     teSuffix = 'って';
     taSuffix = 'った';
     taraSuffix = 'ったら';
-    euphonyNote = '促音便 (Sokuonbin: assimilation to geminate)';
+    euphonyNoteTe = '促音便 (Sokuonbin: assimilation to geminate)';
+    euphonyNoteTa = '促音便 (Sokuonbin: past geminate assimilation)';
   } else if (lastChar === 'む' || lastChar === 'ぶ' || lastChar === 'ぬ') {
     teSuffix = 'んで';
     taSuffix = 'んだ';
     taraSuffix = 'んだら';
-    euphonyNote = '撥音便 (Hatsuonbin: nasal assimilation with rendaku)';
+    euphonyNoteTe = '撥音便 (Hatsuonbin: nasal assimilation with rendaku)';
+    euphonyNoteTa = '撥音便 (Hatsuonbin: past nasal assimilation)';
   } else if (lastChar === 'く') {
     teSuffix = 'いて';
     taSuffix = 'いた';
     taraSuffix = 'いたら';
-    euphonyNote = 'イ音便 (I-onbin: vocalization to -i)';
+    euphonyNoteTe = 'イ音便 (I-onbin: vocalization to -i)';
+    euphonyNoteTa = 'イ音便 (I-onbin: past vocalization)';
   } else if (lastChar === 'ぐ') {
     teSuffix = 'いで';
     taSuffix = 'いだ';
     taraSuffix = 'いだら';
-    euphonyNote = 'イ音便・有声音化 (Voiced I-onbin)';
+    euphonyNoteTe = 'イ音便・有声音化 (Voiced I-onbin)';
+    euphonyNoteTa = 'イ音便・有声音化 (Past voiced I-onbin)';
   } else if (lastChar === 'す') {
     teSuffix = 'して';
     taSuffix = 'した';
     taraSuffix = 'したら';
-    euphonyNote = 'サ行摩擦音保持 (Regular palatalization)';
+    euphonyNoteTe = 'サ行摩擦音保持 (Regular palatalization)';
+    euphonyNoteTa = 'サ行摩擦音保持 (Past regular palatalization)';
   }
 
-  // aru negative is just nai not aranai lol
+  // Existential aru uses suppletive nai/nakatta in place of *aranai/*aranakatta
   const naiForm = isAru ? 'ない' : stem + row.a + 'ない';
-  const readNaiForm = isAru ? 'ない' : readStem + row.a + 'ない';
+  const readNaiForm = !hasReading ? '' : (isAru ? 'ない' : readStem + row.a + 'ない');
   const masenForm = isAru ? 'ありません' : stem + iSound + 'ません';
-  const readMasenForm = isAru ? 'ありません' : readStem + iSound + 'ません';
+  const readMasenForm = !hasReading ? '' : (isAru ? 'ありません' : readStem + iSound + 'ません');
   const nakattaForm = isAru ? 'なかった' : stem + row.a + 'なかった';
-  const readNakattaForm = isAru ? 'なかった' : readStem + row.a + 'なかった';
+  const readNakattaForm = !hasReading ? '' : (isAru ? 'なかった' : readStem + row.a + 'なかった');
 
   const forms = [
     { id: 'dict', nameEn: 'Dictionary / Non-Past', nameJa: '辞書形 / 終止形', reg: 'plain', conj: verb, read: reading, stem, suf: lastChar, morph: `u-grade: [${lastChar}]`, synEn: 'Affirmative non-past habitual or future', synJa: '現在の習慣、将来の事象' },
-    { id: 'masu', nameEn: 'Polite Non-Past (-masu)', nameJa: 'ます形 / 丁寧形', reg: 'polite', conj: stem + iSound + 'ます', read: readStem + iSound + 'ます', stem: stem + iSound, suf: 'ます', morph: isKeigo ? 'honorific stem shift [い] + masu' : `i-grade: [${row.i}] + masu`, synEn: 'Polite assertion in formal discourse', synJa: '丁寧な陳述・対話' },
-    { id: 'nai', nameEn: 'Plain Negative (-nai)', nameJa: '未然形・ない形', reg: 'plain', conj: naiForm, read: readNaiForm, stem: isAru ? '' : stem + row.a, suf: isAru ? 'ない' : 'ない', morph: isAru ? 'suppletive [nai]' : `a-grade: [${row.a}] + nai`, synEn: 'Informal negative assertion', synJa: '未然形による否定' },
+    { id: 'masu', nameEn: 'Polite Non-Past (-masu)', nameJa: 'ます形 / 丁寧形', reg: 'polite', conj: stem + iSound + 'ます', read: r(iSound + 'ます'), stem: stem + iSound, suf: 'ます', morph: isKeigo ? 'honorific stem shift [い] + masu' : `i-grade: [${row.i}] + masu`, synEn: 'Polite assertion in formal discourse', synJa: '丁寧な陳述・対話' },
+    { id: 'nai', nameEn: 'Plain Negative (-nai)', nameJa: '未然形・ない形', reg: 'plain', conj: naiForm, read: readNaiForm, stem: isAru ? '' : stem + row.a, suf: 'ない', morph: isAru ? 'suppletive [nai]' : `a-grade: [${row.a}] + nai`, synEn: 'Informal negative assertion', synJa: '未然形による否定' },
     { id: 'masen', nameEn: 'Polite Negative (-masen)', nameJa: 'ません形', reg: 'polite', conj: masenForm, read: readMasenForm, stem: stem + iSound, suf: 'ません', morph: isKeigo ? 'honorific stem shift [い] + masen' : `i-grade: [${row.i}] + masen`, synEn: 'Polite negation', synJa: '丁寧な否定' },
-    { id: 'te', nameEn: 'Conjunctive (-te form)', nameJa: 'て形 / 接続形', reg: 'plain', conj: stem + teSuffix, read: readStem + teSuffix, stem, suf: teSuffix, morph: euphonyNote, synEn: 'Coordinate conjunction, requests, aspect', synJa: '連用形音便・文の接続' },
-    { id: 'ta', nameEn: 'Plain Past (-ta form)', nameJa: 'た形 / 過去形', reg: 'plain', conj: stem + taSuffix, read: readStem + taSuffix, stem, suf: taSuffix, morph: euphonyNote.replace('te', 'ta'), synEn: 'Completed past or perfect state', synJa: '過去の完了・事象' },
-    { id: 'mashita', nameEn: 'Polite Past (-mashita)', nameJa: 'ました形', reg: 'polite', conj: stem + iSound + 'ました', read: readStem + iSound + 'ました', stem: stem + iSound, suf: 'ました', morph: isKeigo ? 'honorific stem shift [い] + mashita' : `i-grade: [${row.i}] + mashita`, synEn: 'Formal completed past', synJa: '丁寧な過去の叙述' },
-    { id: 'masen_deshita', nameEn: 'Polite Past Neg (-masen deshita)', nameJa: 'ませんでした形', reg: 'polite', conj: stem + iSound + 'ませんでした', read: readStem + iSound + 'ませんでした', stem: stem + iSound, suf: 'ませんでした', morph: isKeigo ? 'honorific stem shift [い] + masen deshita' : `i-grade: [${row.i}] + masen deshita`, synEn: 'Formal past negation', synJa: '丁寧な過去否定' },
-    { id: 'nakatta', nameEn: 'Plain Past Negative (-nakatta)', nameJa: 'なかった形', reg: 'plain', conj: nakattaForm, read: readNakattaForm, stem: isAru ? '' : stem + row.a, suf: isAru ? 'なかった' : 'なかった', morph: isAru ? 'suppletive [nakatta]' : `a-grade: [${row.a}] + nakatta`, synEn: 'Plain past negative', synJa: '日常的な過去否定' },
-    { id: 'potential', nameEn: 'Potential Form', nameJa: '可能形', reg: 'plain', conj: stem + row.e + 'る', read: readStem + row.e + 'る', stem: stem + row.e, suf: 'る', morph: `e-grade: [${row.e}] + ru`, synEn: 'Capacity or circumstantial possibility', synJa: '可能動詞化（下一段活用化）' },
-    { id: 'passive', nameEn: 'Passive Form (-reru)', nameJa: '受身形', reg: 'plain', conj: stem + row.a + 'れる', read: readStem + row.a + 'れる', stem: stem + row.a, suf: 'れる', morph: `a-grade: [${row.a}] + reru`, synEn: 'Passive voice, potential, indirect adversity', synJa: '受動・自発・可能・尊敬' },
-    { id: 'causative', nameEn: 'Causative Form (-seru)', nameJa: '使役形', reg: 'plain', conj: stem + row.a + 'せる', read: readStem + row.a + 'せる', stem: stem + row.a, suf: 'せる', morph: `a-grade: [${row.a}] + seru`, synEn: 'Induce or permit an agent to act', synJa: '他者への動機付け・強制' },
-    { id: 'imperative', nameEn: 'Imperative Form', nameJa: '命令形', reg: 'plain', conj: stem + impSuffix, read: readStem + impSuffix, stem, suf: impSuffix, morph: isKeigo ? 'honorific imperative shift [い]' : `e-grade: [${row.e}]`, synEn: 'Strong directive command', synJa: '強い直接命令' },
-    { id: 'volitional', nameEn: 'Volitional Form (-ō)', nameJa: '意向形', reg: 'plain', conj: stem + row.o + 'う', read: readStem + row.o + 'う', stem: stem + row.o, suf: 'う', morph: `o-grade: [${row.o}] + u`, synEn: 'Speaker resolution or mutual suggestion', synJa: '意志表明・連帯勧誘' },
-    { id: 'ba', nameEn: 'Provisional Conditional (-ba)', nameJa: '仮定形・ば形', reg: 'plain', conj: stem + row.e + 'ば', read: readStem + row.e + 'ば', stem: stem + row.e, suf: 'ば', morph: `e-grade: [${row.e}] + ba`, synEn: 'General law or prerequisite condition', synJa: '順接仮定条件' },
-    { id: 'tara', nameEn: 'General Conditional (-tara)', nameJa: '条件形・たら形', reg: 'plain', conj: stem + taraSuffix, read: readStem + taraSuffix, stem, suf: taraSuffix, morph: `ta-stem + ra`, synEn: 'Subsequent result upon completion', synJa: '継起条件・個別状況仮定' }
+    { id: 'te', nameEn: 'Conjunctive (-te form)', nameJa: 'て形 / 接続形', reg: 'plain', conj: stem + teSuffix, read: r(teSuffix), stem, suf: teSuffix, morph: euphonyNoteTe, synEn: 'Coordinate conjunction, requests, aspect', synJa: '連用形音便・文の接続' },
+    { id: 'ta', nameEn: 'Plain Past (-ta form)', nameJa: 'た形 / 過去形', reg: 'plain', conj: stem + taSuffix, read: r(taSuffix), stem, suf: taSuffix, morph: euphonyNoteTa, synEn: 'Completed past or perfect state', synJa: '過去の完了・事象' },
+    { id: 'mashita', nameEn: 'Polite Past (-mashita)', nameJa: 'ました形', reg: 'polite', conj: stem + iSound + 'ました', read: r(iSound + 'ました'), stem: stem + iSound, suf: 'ました', morph: isKeigo ? 'honorific stem shift [い] + mashita' : `i-grade: [${row.i}] + mashita`, synEn: 'Formal completed past', synJa: '丁寧な過去の叙述' },
+    { id: 'masen_deshita', nameEn: 'Polite Past Neg (-masen deshita)', nameJa: 'ませんでした形', reg: 'polite', conj: stem + iSound + 'ませんでした', read: r(iSound + 'ませんでした'), stem: stem + iSound, suf: 'ませんでした', morph: isKeigo ? 'honorific stem shift [い] + masen deshita' : `i-grade: [${row.i}] + masen deshita`, synEn: 'Formal past negation', synJa: '丁寧な過去否定' },
+    { id: 'nakatta', nameEn: 'Plain Past Negative (-nakatta)', nameJa: 'なかった形', reg: 'plain', conj: nakattaForm, read: readNakattaForm, stem: isAru ? '' : stem + row.a, suf: 'なかった', morph: isAru ? 'suppletive [nakatta]' : `a-grade: [${row.a}] + nakatta`, synEn: 'Plain past negative', synJa: '日常的な過去否定' },
+    { id: 'potential', nameEn: 'Potential Form', nameJa: '可能形', reg: 'plain', conj: isAru ? '- (N/A for ある)' : stem + row.e + 'る', read: isAru ? '' : r(row.e + 'る'), stem: isAru ? '' : stem + row.e, suf: isAru ? '' : 'る', morph: isAru ? 'non-productive (use あり得る)' : `e-grade: [${row.e}] + ru`, synEn: isAru ? 'Existential aru uses あり得る for possibility' : 'Capacity or circumstantial possibility', synJa: isAru ? '「ある」は可能動詞を作らず「あり得る」等を用いる' : '可能動詞化（下一段活用化）' },
+    { id: 'passive', nameEn: 'Passive Form (-reru)', nameJa: '受身形', reg: 'plain', conj: isAru ? '- (N/A for ある)' : stem + row.a + 'れる', read: isAru ? '' : r(row.a + 'れる'), stem: isAru ? '' : stem + row.a, suf: isAru ? '' : 'れる', morph: isAru ? 'non-productive for existential ある' : `a-grade: [${row.a}] + reru`, synEn: isAru ? 'Existential verb does not passivize' : 'Passive voice, potential, indirect adversity', synJa: isAru ? '存在動詞「ある」は受身形をとらない' : '受動・自発・可能・尊敬' },
+    { id: 'causative', nameEn: 'Causative Form (-seru)', nameJa: '使役形', reg: 'plain', conj: stem + row.a + 'せる', read: r(row.a + 'せる'), stem: stem + row.a, suf: 'せる', morph: `a-grade: [${row.a}] + seru`, synEn: 'Induce or permit an agent to act', synJa: '他者への動機付け・強制' },
+    { id: 'imperative', nameEn: 'Imperative Form', nameJa: '命令形', reg: 'plain', conj: isAru ? '- (N/A for ある)' : stem + impSuffix, read: isAru ? '' : r(impSuffix), stem: isAru ? '' : stem, suf: isAru ? '' : impSuffix, morph: isAru ? 'non-productive for existential ある' : (isKeigo ? 'honorific imperative shift [い]' : `e-grade: [${row.e}]`), synEn: isAru ? 'Existential state has no standard command form' : 'Strong directive command', synJa: isAru ? '存在詞「ある」には通常の命令形がない' : '強い直接命令' },
+    { id: 'volitional', nameEn: 'Volitional Form (-ō)', nameJa: '意向形', reg: 'plain', conj: stem + row.o + 'う', read: r(row.o + 'う'), stem: stem + row.o, suf: 'う', morph: `o-grade: [${row.o}] + u`, synEn: 'Speaker resolution or mutual suggestion', synJa: '意志表明・連帯勧誘' },
+    { id: 'ba', nameEn: 'Provisional Conditional (-ba)', nameJa: '仮定形・ば形', reg: 'plain', conj: stem + row.e + 'ば', read: r(row.e + 'ば'), stem: stem + row.e, suf: 'ば', morph: `e-grade: [${row.e}] + ba`, synEn: 'General law or prerequisite condition', synJa: '順接仮定条件' },
+    { id: 'tara', nameEn: 'General Conditional (-tara)', nameJa: '条件形・たら形', reg: 'plain', conj: stem + taraSuffix, read: r(taraSuffix), stem, suf: taraSuffix, morph: `ta-stem + ra`, synEn: 'Subsequent result upon completion', synJa: '継起条件・個別状況仮定' }
   ];
 
   return { verb, group, groupLabel: 'Group 1: Godan (五段動詞)', stem, ending: lastChar, forms };
@@ -816,7 +856,8 @@ function renderConjugationMatrix(data, filter = 'all') {
       ? (currentLang === 'en' ? 'Polite (敬体)' : '敬体 (丁寧)')
       : (currentLang === 'en' ? 'Plain (常体)' : '常体 (普通)');
 
-    const rom = kanaToRomaji(f.read);
+    const rom = f.read ? kanaToRomaji(f.read) : '-';
+    const readingDisplay = f.read || (currentLang === 'en' ? '(Enter hiragana for reading)' : '（かな入力で読み表示）');
     const formPrimary = currentLang === 'en' ? f.nameEn : f.nameJa;
     const formSecondary = currentLang === 'en' ? f.nameJa : f.nameEn;
     const syntaxDesc = currentLang === 'en' ? f.synEn : f.synJa;
@@ -832,7 +873,7 @@ function renderConjugationMatrix(data, filter = 'all') {
       <td class="conjugated-cell">
         <span class="conjugated-stem">${escapeHTML(f.stem)}</span><span class="conjugated-suffix">${escapeHTML(f.suf)}</span>
       </td>
-      <td class="reading-cell">${escapeHTML(f.read)}</td>
+      <td class="reading-cell">${escapeHTML(readingDisplay)}</td>
       <td class="romaji-cell">${escapeHTML(rom)}</td>
       <td><span class="morpheme-cell">${escapeHTML(f.morph)}</span></td>
       <td class="syntax-cell">${escapeHTML(syntaxDesc)}</td>
@@ -901,9 +942,9 @@ function renderDateMatrix(dateData) {
   updateSynthesizer(dateData);
 }
 
-// days with irregular duration readings, hardcoding the weird ones
+// Duration counter readings for irregular day intervals
 const durationWagoMap = {
-  1: 'いちにち',
+  1: 'いちにちかん',
   2: 'ふつかかん',
   3: 'みっかかん',
   4: 'よっかかん',
@@ -961,7 +1002,7 @@ function updateSynthesizer(dateData) {
       : `${dateData.year}年${dateData.month}月${dateData.day}日から試験が始まります。（開始時点を示す助詞「から」）`;
   } else if (pred === 'duration') {
     const durationKana = getDurationKana(dateData.day);
-    const durationText = dateData.day === 1 ? '1日' : `${dateData.day}日間`;
+    const durationText = `${dateData.day}日間`;
     sentenceJa.innerHTML = `${dateStr}まで <strong>${durationText}</strong> 滞在します。`;
     sentenceKana.textContent = `${dateKana}まで ${durationKana} たいざいします。`;
     sentenceGloss.textContent = currentLang === 'en'
@@ -1209,7 +1250,8 @@ function runConjugation() {
   renderConjugationMatrix(data, filter);
 }
 
-document.addEventListener('DOMContentLoaded', () => {
+if (typeof document !== 'undefined') {
+  document.addEventListener('DOMContentLoaded', () => {
   try {
     const savedTheme = localStorage.getItem('nsm_theme');
     if (savedTheme) {
@@ -1359,4 +1401,16 @@ document.addEventListener('DOMContentLoaded', () => {
   runConjugation();
   runDateUpdate();
   renderKanaGrid('hiragana');
-});
+  });
+}
+
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = {
+    detectVerbGroup,
+    conjugateVerb,
+    kanaToRomaji,
+    constructDateData,
+    getDurationKana,
+    getImperialEra
+  };
+}
